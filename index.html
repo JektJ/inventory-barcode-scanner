@@ -13,6 +13,8 @@
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
+      max-width: 600px;
+      margin: auto;
     }
 
     #reader {
@@ -24,7 +26,40 @@
     #result {
       font-size: 22px;
       font-weight: bold;
+      margin: 20px 0;
+    }
+
+    .field {
+      text-align: left;
+      margin: 15px 0;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      font-size: 18px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #status {
       margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -39,18 +74,66 @@
     Point the camera at a barcode.
   </div>
 
+  <div class="field">
+    <label for="partNumber">Part Number</label>
+    <input type="text" id="partNumber" readonly>
+  </div>
+
+  <div class="field">
+    <label for="location">Location</label>
+    <input
+      type="text"
+      id="location"
+      placeholder="Enter location">
+  </div>
+
+  <div class="field">
+    <label for="quantity">Quantity</label>
+    <input
+      type="number"
+      id="quantity"
+      min="1"
+      value="1">
+  </div>
+
+  <button onclick="addInventory()">
+    ADD INVENTORY
+  </button>
+
+  <div id="status"></div>
+
   <script>
 
+    const WEB_APP_URL =
+      "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
+
+    let scanLocked = false;
+
+
     function onScanSuccess(decodedText, decodedResult) {
+
+      if (scanLocked) {
+        return;
+      }
+
+      scanLocked = true;
+
+      document.getElementById("partNumber").value =
+        decodedText;
 
       document.getElementById("result").innerText =
         "Scanned: " + decodedText;
 
+      document.getElementById("status").innerText =
+        "Barcode captured. Enter location and quantity.";
+
     }
+
 
     function onScanFailure(error) {
       // Keep scanning.
     }
+
 
     const scanner = new Html5QrcodeScanner(
       "reader",
@@ -66,6 +149,91 @@
     );
 
     scanner.render(onScanSuccess, onScanFailure);
+
+
+    async function addInventory() {
+
+      const partNumber =
+        document.getElementById("partNumber").value.trim();
+
+      const location =
+        document.getElementById("location").value.trim();
+
+      const quantity =
+        Number(document.getElementById("quantity").value);
+
+
+      if (!partNumber) {
+
+        document.getElementById("status").innerText =
+          "Please scan a barcode first.";
+
+        return;
+      }
+
+
+      if (!location) {
+
+        document.getElementById("status").innerText =
+          "Please enter a location.";
+
+        return;
+      }
+
+
+      if (!quantity || quantity <= 0) {
+
+        document.getElementById("status").innerText =
+          "Please enter a valid quantity.";
+
+        return;
+      }
+
+
+      document.getElementById("status").innerText =
+        "Adding inventory...";
+
+
+      const url =
+        WEB_APP_URL +
+        "?action=add" +
+        "&partNumber=" + encodeURIComponent(partNumber) +
+        "&location=" + encodeURIComponent(location) +
+        "&quantity=" + encodeURIComponent(quantity);
+
+
+      try {
+
+        const response = await fetch(url);
+
+        const data = await response.json();
+
+
+        if (data.success) {
+
+          document.getElementById("status").innerText =
+            "Inventory added successfully!";
+
+          document.getElementById("location").value = "";
+          document.getElementById("quantity").value = 1;
+
+          scanLocked = false;
+
+        } else {
+
+          document.getElementById("status").innerText =
+            "Error: " + data.message;
+
+        }
+
+      } catch (error) {
+
+        document.getElementById("status").innerText =
+          "Connection error: " + error.message;
+
+      }
+
+    }
 
   </script>
 
