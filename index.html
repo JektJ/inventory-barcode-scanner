@@ -17,16 +17,20 @@
       margin: auto;
     }
 
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    #instruction {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 15px 0;
+    }
+
     #reader {
       width: 100%;
       max-width: 500px;
       margin: 20px auto;
-    }
-
-    #result {
-      font-size: 22px;
-      font-weight: bold;
-      margin: 20px 0;
     }
 
     .field {
@@ -50,10 +54,20 @@
     button {
       width: 100%;
       padding: 14px;
-      margin-top: 15px;
+      margin-top: 10px;
       font-size: 18px;
       font-weight: bold;
       cursor: pointer;
+    }
+
+    .secondary {
+      font-size: 16px;
+    }
+
+    #available {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 20px 0;
     }
 
     #status {
@@ -68,27 +82,49 @@
 
   <h2>Inventory Barcode Scanner</h2>
 
-  <div id="reader"></div>
-
-  <div id="result">
-    Point the camera at a barcode.
+  <div id="instruction">
+    Scan Part Number
   </div>
+
+  <div id="reader"></div>
 
   <div class="field">
     <label for="partNumber">Part Number</label>
-    <input type="text" id="partNumber" readonly>
+
+    <input
+      type="text"
+      id="partNumber"
+      placeholder="Scan or enter part number">
+
+    <button
+      class="secondary"
+      onclick="useManualPart()">
+      USE PART NUMBER
+    </button>
   </div>
 
   <div class="field">
     <label for="location">Location</label>
+
     <input
       type="text"
       id="location"
-      placeholder="Enter location">
+      placeholder="Scan or enter location">
+
+    <button
+      class="secondary"
+      onclick="useManualLocation()">
+      USE LOCATION
+    </button>
+  </div>
+
+  <div id="available">
+    Available: —
   </div>
 
   <div class="field">
     <label for="quantity">Quantity</label>
+
     <input
       type="number"
       id="quantity"
@@ -102,11 +138,14 @@
 
   <div id="status"></div>
 
+
   <script>
 
     const WEB_APP_URL =
       "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
 
+
+    let scanMode = "part";
     let scanLocked = false;
 
 
@@ -118,14 +157,42 @@
 
       scanLocked = true;
 
-      document.getElementById("partNumber").value =
-        decodedText;
 
-      document.getElementById("result").innerText =
-        "Scanned: " + decodedText;
+      if (scanMode === "part") {
 
-      document.getElementById("status").innerText =
-        "Barcode captured. Enter location and quantity.";
+        document.getElementById("partNumber").value =
+          decodedText;
+
+        document.getElementById("instruction").innerText =
+          "Now Scan Location";
+
+        document.getElementById("status").innerText =
+          "Part captured: " + decodedText;
+
+        scanMode = "location";
+
+        scanLocked = false;
+
+        return;
+      }
+
+
+      if (scanMode === "location") {
+
+        document.getElementById("location").value =
+          decodedText;
+
+        document.getElementById("instruction").innerText =
+          "Part and Location Captured";
+
+        document.getElementById("status").innerText =
+          "Location captured: " + decodedText;
+
+        scanMode = "complete";
+
+        getQuantity();
+
+      }
 
     }
 
@@ -148,7 +215,129 @@
       false
     );
 
+
     scanner.render(onScanSuccess, onScanFailure);
+
+
+    function useManualPart() {
+
+      const part =
+        document.getElementById("partNumber").value.trim();
+
+      if (!part) {
+
+        document.getElementById("status").innerText =
+          "Enter a part number first.";
+
+        return;
+      }
+
+      scanMode = "location";
+
+      document.getElementById("instruction").innerText =
+        "Scan Location";
+
+      document.getElementById("status").innerText =
+        "Part entered: " + part;
+
+    }
+
+
+    function useManualLocation() {
+
+      const location =
+        document.getElementById("location").value.trim();
+
+      const part =
+        document.getElementById("partNumber").value.trim();
+
+      if (!part) {
+
+        document.getElementById("status").innerText =
+          "Enter or scan the part number first.";
+
+        return;
+      }
+
+      if (!location) {
+
+        document.getElementById("status").innerText =
+          "Enter a location first.";
+
+        return;
+      }
+
+      scanMode = "complete";
+
+      document.getElementById("instruction").innerText =
+        "Part and Location Captured";
+
+      getQuantity();
+
+    }
+
+
+    async function getQuantity() {
+
+      const partNumber =
+        document.getElementById("partNumber").value.trim();
+
+      const location =
+        document.getElementById("location").value.trim();
+
+
+      if (!partNumber || !location) {
+        return;
+      }
+
+
+      document.getElementById("available").innerText =
+        "Checking inventory...";
+
+
+      const url =
+        WEB_APP_URL +
+        "?action=getQuantity" +
+        "&partNumber=" + encodeURIComponent(partNumber) +
+        "&location=" + encodeURIComponent(location);
+
+
+      try {
+
+        const response = await fetch(url);
+
+        const data = await response.json();
+
+
+        if (data.success) {
+
+          document.getElementById("available").innerText =
+            "Available: " + data.quantity;
+
+          document.getElementById("status").innerText =
+            "Inventory lookup complete.";
+
+        } else {
+
+          document.getElementById("available").innerText =
+            "Available: —";
+
+          document.getElementById("status").innerText =
+            "Error: " + data.message;
+
+        }
+
+      } catch (error) {
+
+        document.getElementById("available").innerText =
+          "Available: —";
+
+        document.getElementById("status").innerText =
+          "Connection error: " + error.message;
+
+      }
+
+    }
 
 
     async function addInventory() {
@@ -166,7 +355,7 @@
       if (!partNumber) {
 
         document.getElementById("status").innerText =
-          "Please scan a barcode first.";
+          "Please enter or scan a part number.";
 
         return;
       }
@@ -175,7 +364,7 @@
       if (!location) {
 
         document.getElementById("status").innerText =
-          "Please enter a location.";
+          "Please enter or scan a location.";
 
         return;
       }
@@ -214,8 +403,15 @@
           document.getElementById("status").innerText =
             "Inventory added successfully!";
 
-          document.getElementById("location").value = "";
+          document.getElementById("available").innerText =
+            "Available: " + data.quantity;
+
           document.getElementById("quantity").value = 1;
+
+          scanMode = "part";
+
+          document.getElementById("instruction").innerText =
+            "Scan Part Number";
 
           scanLocked = false;
 
