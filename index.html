@@ -360,9 +360,7 @@
 
       return;
 
-      if (scanLocked) {
-        return;
-      }
+      
 
 
       if (!selectedAction) {
@@ -457,7 +455,9 @@
         scanMode = "complete";
 
       }
-
+    if (scanLocked) {
+        return;
+      }
     }
 
 
