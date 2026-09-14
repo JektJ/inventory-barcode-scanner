@@ -355,11 +355,15 @@
 
 
   function onScanSuccess(decodedText, decodedResult) {
-      document.getElementById("status").innerText =
-      "DEBUG DECODED: " + decodedText;
+    //This is for troubleshooting camera issues. It loads the scanned barcode down at the bottom.   
+    //document.getElementById("status").innerText =
+     // "DEBUG DECODED: " + decodedText;
 
-      return;
-
+      //return;
+      
+      if (scanLocked) {
+        return;
+      }
       
 
 
@@ -455,9 +459,7 @@
         scanMode = "complete";
 
       }
-    if (scanLocked) {
-        return;
-      }
+    
     }
 
 
