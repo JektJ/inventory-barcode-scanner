@@ -671,11 +671,7 @@
         document.getElementById("status").innerText =
           "CONNECTION ERROR\n" + error.message;
 
-      } finally {
-
-        processButton.disabled = false;
-        processButton.innerText = "PROCESS INVENTORY";
-      }
+  }
 
 
 function resetFormAfterSuccess() {
@@ -809,20 +805,21 @@ function resetFormAfterSuccess() {
 
 
         if (data.success) {
+          document.getElementById("status").classList.remove("status-error");
+          document.getElementById("status").classList.add("status-success");
+          if (selectedAction === "add") {
 
-  if (selectedAction === "add") {
+            document.getElementById("status").innerText =
+              "ADD COMPLETE\n" +
+              "Part: " + partNumber + "\n" +
+              "Location: " + location + "\n" +
+              "Quantity added: " + quantity + "\n" +
+              "Available now: " + data.quantity;
 
-    document.getElementById("status").innerText =
-      "ADD COMPLETE\n" +
-      "Part: " + partNumber + "\n" +
-      "Location: " + location + "\n" +
-      "Quantity added: " + quantity + "\n" +
-      "Available now: " + data.quantity;
+            document.getElementById("available").innerText =
+              "Available: " + data.quantity;
 
-    document.getElementById("available").innerText =
-      "Available: " + data.quantity;
-
-  } else if (selectedAction === "remove") {
+      } else if (selectedAction === "remove") {
 
     document.getElementById("status").innerText =
       "REMOVE COMPLETE\n" +
@@ -855,18 +852,26 @@ function resetFormAfterSuccess() {
           
         } else {
 
-          document.getElementById("status").innerText =
-            "Error: " + data.message;
+  document.getElementById("status").classList.remove("status-success");
+  document.getElementById("status").classList.add("status-error");
 
-        }
+  document.getElementById("status").innerText =
+    "ERROR\n" + data.message;
+}
 
       } catch (error) {
 
+        document.getElementById("status").classList.remove("status-success");
+        document.getElementById("status").classList.add("status-error");
+
         document.getElementById("status").innerText =
-          "Connection error: " + error.message;
+          "CONNECTION ERROR\n" + error.message;
 
+      } finally {
+
+        processButton.disabled = false;
+        processButton.innerText = "PROCESS INVENTORY";
       }
-
     }
 
   </script>
