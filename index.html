@@ -661,7 +661,19 @@
       ": " +
       data.toQuantity;
   }
+  function resetFormAfterSuccess() {
 
+  document.getElementById("partNumber").value = "";
+  document.getElementById("location").value = "";
+  document.getElementById("toLocation").value = "";
+  document.getElementById("quantity").value = 1;
+
+  scanMode = "part";
+  scanLocked = false;
+
+  document.getElementById("instruction").innerText =
+    "Scan Part Number";
+}
     async function processInventory() {
 
       const partNumber =
@@ -797,17 +809,7 @@
           }
 
 
-          document.getElementById("quantity").value = 1;
-
-
-          scanMode = "part";
-
-          scanLocked = false;
-
-
-          document.getElementById("instruction").innerText =
-            "Scan Part Number";
-
+          resetFormAfterSuccess();
         } else {
 
           document.getElementById("status").innerText =
