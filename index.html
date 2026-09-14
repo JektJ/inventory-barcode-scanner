@@ -768,27 +768,48 @@ function resetFormAfterSuccess() {
 
         if (data.success) {
 
-          document.getElementById("status").innerText =
-            data.message;
+  if (selectedAction === "add") {
 
+    document.getElementById("status").innerText =
+      "ADD COMPLETE\n" +
+      "Part: " + partNumber + "\n" +
+      "Location: " + location + "\n" +
+      "Quantity added: " + quantity + "\n" +
+      "Available now: " + data.quantity;
 
-          if (selectedAction === "move") {
+    document.getElementById("available").innerText =
+      "Available: " + data.quantity;
 
-            document.getElementById("available").innerText =
-              "Available at " +
-              toLocation +
-              ": " +
-              data.toQuantity;
+  } else if (selectedAction === "remove") {
 
-          } else {
+    document.getElementById("status").innerText =
+      "REMOVE COMPLETE\n" +
+      "Part: " + partNumber + "\n" +
+      "Location: " + location + "\n" +
+      "Quantity removed: " + quantity + "\n" +
+      "Available now: " + data.quantity;
 
-            document.getElementById("available").innerText =
-              "Available: " + data.quantity;
+    document.getElementById("available").innerText =
+      "Available: " + data.quantity;
 
-          }
+  } else if (selectedAction === "move") {
 
+    document.getElementById("status").innerText =
+      "MOVE COMPLETE\n" +
+      "Part: " + partNumber + "\n" +
+      "From: " + location + "\n" +
+      "To: " + toLocation + "\n" +
+      "Quantity moved: " + quantity + "\n" +
+      "Available at destination: " + data.toQuantity;
 
-          resetFormAfterSuccess();
+    document.getElementById("available").innerText =
+      "Available at " +
+      toLocation +
+      ": " +
+      data.toQuantity;
+  }
+
+  resetFormAfterSuccess();
           
         } else {
 
