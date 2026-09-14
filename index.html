@@ -355,7 +355,9 @@
 
 
     function onScanSuccess(decodedText, decodedResult) {
-
+      
+      console.log("BARCODE DECODED:", decodedText);
+      
       if (scanLocked) {
         return;
       }
