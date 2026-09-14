@@ -395,14 +395,9 @@
 
         scanMode = "location";
 
-        // Wait briefly before allowing the next scan.
-        // This prevents the Part Number QR from being
-        // immediately scanned again as the Location.
-        //setTimeout(function() {
+        scanLocked = true;
 
-          scanLocked = false;
-
-//}, 1000); // end scan delay
+        setTimeout(() => scanLocked = false, 1000);
 
         return;
 
