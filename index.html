@@ -785,17 +785,8 @@ function resetFormAfterSuccess() {
           }
 
 
-          document.getElementById("quantity").value = 1;
-
-
-          scanMode = "part";
-
-          scanLocked = false;
-
-
-          document.getElementById("instruction").innerText =
-            "Scan Part Number";
-
+          resetFormAfterSuccess();
+          
         } else {
 
           document.getElementById("status").innerText =
