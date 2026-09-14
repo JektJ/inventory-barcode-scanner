@@ -645,21 +645,25 @@
         "Inventory lookup complete.";
 
     } else {
+      document.getElementById("status").classList.remove("status-success");
+      document.getElementById("status").classList.add("status-error");
+
 
       document.getElementById("available").innerText =
         "Available: —";
 
       document.getElementById("status").innerText =
-        "Error: " + data.message;
-    }
-
+        "ERROR\n" + data.message;
+      }
   } catch (error) {
+    document.getElementById("status").classList.remove("status-success");
+    document.getElementById("status").classList.add("status-error");
 
     document.getElementById("available").innerText =
       "Available: —";
 
     document.getElementById("status").innerText =
-      "Connection error: " + error.message;
+      "Connection error\n" + error.message;
   }
 }
 
