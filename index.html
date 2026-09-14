@@ -87,6 +87,7 @@
       margin-top: 20px;
       font-size: 18px;
       font-weight: bold;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -616,37 +617,46 @@
 
         if (data.success) {
 
-          document.getElementById("available").innerText =
-            "Available: " + data.quantity;
+  if (selectedAction === "add") {
 
+    document.getElementById("status").innerText =
+      "ADD COMPLETE\n" +
+      "Part: " + partNumber + "\n" +
+      "Location: " + location + "\n" +
+      "Quantity added: " + quantity + "\n" +
+      "Available now: " + data.quantity;
 
-          document.getElementById("status").innerText =
-            "Inventory lookup complete.";
+    document.getElementById("available").innerText =
+      "Available: " + data.quantity;
 
-        } else {
+  } else if (selectedAction === "remove") {
 
-          document.getElementById("available").innerText =
-            "Available: —";
+    document.getElementById("status").innerText =
+      "REMOVE COMPLETE\n" +
+      "Part: " + partNumber + "\n" +
+      "Location: " + location + "\n" +
+      "Quantity removed: " + quantity + "\n" +
+      "Available now: " + data.quantity;
 
+    document.getElementById("available").innerText =
+      "Available: " + data.quantity;
 
-          document.getElementById("status").innerText =
-            "Error: " + data.message;
+  } else if (selectedAction === "move") {
 
-        }
+    document.getElementById("status").innerText =
+      "MOVE COMPLETE\n" +
+      "Part: " + partNumber + "\n" +
+      "From: " + location + "\n" +
+      "To: " + toLocation + "\n" +
+      "Quantity moved: " + quantity + "\n" +
+      "Available at destination: " + data.toQuantity;
 
-      } catch (error) {
-
-        document.getElementById("available").innerText =
-          "Available: —";
-
-
-        document.getElementById("status").innerText =
-          "Connection error: " + error.message;
-
-      }
-
-    }
-
+    document.getElementById("available").innerText =
+      "Available at " +
+      toLocation +
+      ": " +
+      data.toQuantity;
+  }
 
     async function processInventory() {
 
