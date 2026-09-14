@@ -99,6 +99,19 @@
       font-weight: bold;
       white-space: pre-line;
     }
+    .status-success {
+  padding: 15px;
+  border: 2px solid green;
+  border-radius: 8px;
+  background-color: #e8f5e9;
+}
+
+.status-error {
+  padding: 15px;
+  border: 2px solid red;
+  border-radius: 8px;
+  background-color: #ffebee;
+}
   </style>
 </head>
 
@@ -623,7 +636,8 @@
     const data = await response.json();
 
     if (data.success) {
-
+      document.getElementById("status").classList.remove("status-error");
+      document.getElementById("status").classList.add("status-success");
       document.getElementById("available").innerText =
         "Available: " + data.quantity;
 
