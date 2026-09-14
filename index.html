@@ -243,8 +243,10 @@
   </div>
 
 
-  <button onclick="processInventory()">
-    PROCESS INVENTORY
+  <button
+  id="processButton"
+  onclick="processInventory()">
+  PROCESS INVENTORY
   </button>
 
 
@@ -661,17 +663,19 @@
       document.getElementById("status").innerText =
         "ERROR\n" + data.message;
       }
-  } catch (error) {
-    document.getElementById("status").classList.remove("status-success");
-    document.getElementById("status").classList.add("status-error");
+      } catch (error) {
 
-    document.getElementById("available").innerText =
-      "Available: —";
+        document.getElementById("status").classList.remove("status-success");
+        document.getElementById("status").classList.add("status-error");
 
-    document.getElementById("status").innerText =
-      "Connection error\n" + error.message;
-  }
-}
+        document.getElementById("status").innerText =
+          "CONNECTION ERROR\n" + error.message;
+
+      } finally {
+
+        processButton.disabled = false;
+        processButton.innerText = "PROCESS INVENTORY";
+      }
 
 
 function resetFormAfterSuccess() {
@@ -762,7 +766,11 @@ function resetFormAfterSuccess() {
 
         return;
       }
+      const processButton =
+      document.getElementById("processButton");
 
+      processButton.disabled = true;
+      processButton.innerText = "PROCESSING...";
 
       document.getElementById("status").innerText =
         selectedAction === "add"
