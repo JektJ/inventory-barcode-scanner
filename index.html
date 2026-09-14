@@ -355,113 +355,118 @@
 
 
   function onScanSuccess(decodedText, decodedResult) {
-    //This is for troubleshooting camera issues. It loads the scanned barcode down at the bottom.   
-    //document.getElementById("status").innerText =
-     // "DEBUG DECODED: " + decodedText;
 
-      //return;
-      
-      if (scanLocked) {
-        return;
-      }
-      
+  // ============================================================
+  // IGNORE SCANS WHILE THE CURRENT VALUE IS WAITING FOR CONFIRMATION
+  // ============================================================
+
+  if (scanLocked) {
+    return;
+  } // end scanLocked check
 
 
-      if (!selectedAction) {
+  // ============================================================
+  // REQUIRE AN INVENTORY ACTION FIRST
+  // ============================================================
 
-        document.getElementById("status").innerText =
-          "Please choose ADD, REMOVE, or MOVE first.";
+  if (!selectedAction) {
 
-        return;
-      }
+    document.getElementById("status").innerText =
+      "Please choose ADD, REMOVE, or MOVE first.";
 
+    return;
 
-      scanLocked = true;
-
-
-      if (scanMode === "part") {
-
-        document.getElementById("partNumber").value =
-          decodedText;
+  } // end selectedAction check
 
 
-        document.getElementById("instruction").innerText =
-          "Scan From Location";
+  // ============================================================
+  // PART NUMBER SCAN
+  // Capture ONE part number, then lock scanning.
+  // USE PART NUMBER will unlock the scanner for Location.
+  // ============================================================
+
+  if (scanMode === "part") {
+
+    document.getElementById("partNumber").value =
+      decodedText.toUpperCase();
+
+    document.getElementById("instruction").innerText =
+      "Confirm Part Number";
+
+    document.getElementById("status").innerText =
+      "Part captured: " + decodedText.toUpperCase();
+
+    scanLocked = true;
+
+    return;
+
+  } // end Part Number scan
 
 
-        document.getElementById("status").innerText =
-          "Part captured: " + decodedText;
+  // ============================================================
+  // LOCATION SCAN
+  // We are leaving this behavior unchanged for this test.
+  // ============================================================
+
+  if (scanMode === "location") {
+
+    document.getElementById("location").value =
+      decodedText.toUpperCase();
 
 
-        scanMode = "location";
+    if (selectedAction === "move") {
 
-        scanLocked = true;
+      document.getElementById("instruction").innerText =
+        "Scan To Location";
 
-        setTimeout(() => scanLocked = false, 1000);
+      document.getElementById("status").innerText =
+        "From location captured: " + decodedText.toUpperCase();
 
-        return;
+      scanMode = "toLocation";
 
-      }
-      if (scanMode === "location") {
+      scanLocked = false;
 
-        document.getElementById("location").value =
-          decodedText;
+      getQuantity();
 
+      return;
 
-        if (selectedAction === "move") {
-
-          document.getElementById("instruction").innerText =
-            "Scan To Location";
+    } // end MOVE location handling
 
 
-          document.getElementById("status").innerText =
-            "From location captured: " + decodedText;
+    document.getElementById("instruction").innerText =
+      "Part and Location Captured";
+
+    document.getElementById("status").innerText =
+      "Location captured: " + decodedText.toUpperCase();
+
+    scanMode = "complete";
+
+    getQuantity();
+
+  } // end Location scan
 
 
-          scanMode = "toLocation";
+  // ============================================================
+  // TO LOCATION SCAN
+  // Used only for MOVE.
+  // ============================================================
 
-          scanLocked = false;
+  if (scanMode === "toLocation") {
 
-          getQuantity();
+    document.getElementById("toLocation").value =
+      decodedText.toUpperCase();
 
-          return;
-        }
+    document.getElementById("instruction").innerText =
+      "Move Ready";
 
+    document.getElementById("status").innerText =
+      "To location captured: " + decodedText.toUpperCase();
 
-        document.getElementById("instruction").innerText =
-          "Part and Location Captured";
+    scanMode = "complete";
 
+  } // end To Location scan
 
-        document.getElementById("status").innerText =
-          "Location captured: " + decodedText;
-
-
-        scanMode = "complete";
-
-        getQuantity();
-
-      }
-
-
-      if (scanMode === "toLocation") {
-
-        document.getElementById("toLocation").value =
-          decodedText;
-
-
-        document.getElementById("instruction").innerText =
-          "Move Ready";
-
-
-        document.getElementById("status").innerText =
-          "To location captured: " + decodedText;
-
-
-        scanMode = "complete";
-
-      }
-    
-    }
+} // end onScanSuccess()
 
 
     function onScanFailure(error) {
@@ -513,7 +518,8 @@
 
 
       scanMode = "location";
-
+      
+      scanLocked = "false;
 
       document.getElementById("instruction").innerText =
         selectedAction === "move"
