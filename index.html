@@ -329,6 +329,15 @@
           .style.display = "none";
 
       }
+      // ============================================================
+      // START A FRESH TRANSACTION
+      // Clicking ADD, REMOVE, or MOVE also acts as a reset.
+      // ============================================================
+
+      document.getElementById("partNumber").value = "";
+      document.getElementById("location").value = "";
+      document.getElementById("toLocation").value = "";
+      document.getElementById("quantity").value = 1;
 
 
       scanMode = "part";
