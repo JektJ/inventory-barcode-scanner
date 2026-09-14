@@ -239,7 +239,19 @@
 
     let scanLocked = false;
 
+    function resetFormAfterSuccess() {
 
+      document.getElementById("partNumber").value = "";
+      document.getElementById("location").value = "";
+      document.getElementById("toLocation").value = "";
+      document.getElementById("quantity").value = 1;
+
+      scanMode = "part";
+      scanLocked = false;
+
+      document.getElementById("instruction").innerText =
+        "Scan Part Number";
+    }
     function selectAction(action) {
 
       selectedAction = action;
@@ -673,19 +685,7 @@
 
     }
     
-    function resetFormAfterSuccess() {
-
-      document.getElementById("partNumber").value = "";
-      document.getElementById("location").value = "";
-      document.getElementById("toLocation").value = "";
-      document.getElementById("quantity").value = 1;
-
-      scanMode = "part";
-      scanLocked = false;
-
-      document.getElementById("instruction").innerText =
-        "Scan Part Number";
-    }
+    
 
     async function processInventory() {
 
