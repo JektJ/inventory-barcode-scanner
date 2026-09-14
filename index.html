@@ -640,12 +640,10 @@
   try {
 
     const response = await fetch(url);
-
     const data = await response.json();
 
     if (data.success) {
-      document.getElementById("status").classList.remove("status-error");
-      document.getElementById("status").classList.add("status-success");
+
       document.getElementById("available").innerText =
         "Available: " + data.quantity;
 
@@ -653,25 +651,23 @@
         "Inventory lookup complete.";
 
     } else {
-      document.getElementById("status").classList.remove("status-success");
-      document.getElementById("status").classList.add("status-error");
-
 
       document.getElementById("available").innerText =
         "Available: —";
 
       document.getElementById("status").innerText =
-        "ERROR\n" + data.message;
-      }
-      } catch (error) {
+        "Error: " + data.message;
+    }
 
-        document.getElementById("status").classList.remove("status-success");
-        document.getElementById("status").classList.add("status-error");
+  } catch (error) {
 
-        document.getElementById("status").innerText =
-          "CONNECTION ERROR\n" + error.message;
+    document.getElementById("available").innerText =
+      "Available: —";
 
+    document.getElementById("status").innerText =
+      "Connection error: " + error.message;
   }
+}
 
 
 function resetFormAfterSuccess() {
@@ -689,190 +685,192 @@ function resetFormAfterSuccess() {
 }
     async function processInventory() {
 
-      const partNumber =
-        document.getElementById("partNumber").value.trim();
+  const partNumber =
+    document.getElementById("partNumber").value.trim();
 
+  const location =
+    document.getElementById("location").value.trim();
 
-      const location =
-        document.getElementById("location").value.trim();
+  const toLocation =
+    document.getElementById("toLocation").value.trim();
 
+  const quantity =
+    Number(document.getElementById("quantity").value);
 
-      const toLocation =
-        document.getElementById("toLocation").value.trim();
+  if (!selectedAction) {
 
+    document.getElementById("status").innerText =
+      "Please choose ADD, REMOVE, or MOVE.";
 
-      const quantity =
-        Number(
-          document.getElementById("quantity").value
-        );
+    return;
+  }
 
+  if (!partNumber) {
 
-      if (!selectedAction) {
+    document.getElementById("status").innerText =
+      "Please enter or scan a part number.";
+
+    return;
+  }
+
+  if (!location) {
+
+    document.getElementById("status").innerText =
+      selectedAction === "move"
+        ? "Please enter the FROM location."
+        : "Please enter or scan a location.";
+
+    return;
+  }
+
+  if (selectedAction === "move" && !toLocation) {
+
+    document.getElementById("status").innerText =
+      "Please enter the TO location.";
+
+    return;
+  }
+
+  if (
+    selectedAction === "move" &&
+    location === toLocation
+  ) {
+
+    document.getElementById("status").innerText =
+      "FROM and TO locations cannot be the same.";
+
+    return;
+  }
+
+  if (!quantity || quantity <= 0) {
+
+    document.getElementById("status").innerText =
+      "Please enter a valid quantity.";
+
+    return;
+  }
+
+  const processButton =
+    document.getElementById("processButton");
+
+  processButton.disabled = true;
+  processButton.innerText = "PROCESSING...";
+
+  document.getElementById("status").classList.remove(
+    "status-success",
+    "status-error"
+  );
+
+  document.getElementById("status").innerText =
+    selectedAction === "add"
+      ? "Adding inventory..."
+      : selectedAction === "remove"
+      ? "Removing inventory..."
+      : "Moving inventory...";
+
+  let url =
+    WEB_APP_URL +
+    "?action=" +
+    encodeURIComponent(selectedAction) +
+    "&partNumber=" +
+    encodeURIComponent(partNumber) +
+    "&location=" +
+    encodeURIComponent(location) +
+    "&quantity=" +
+    encodeURIComponent(quantity);
+
+  if (selectedAction === "move") {
+
+    url +=
+      "&toLocation=" +
+      encodeURIComponent(toLocation);
+  }
+
+  try {
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.success) {
+
+      document.getElementById("status")
+        .classList.remove("status-error");
+
+      document.getElementById("status")
+        .classList.add("status-success");
+
+      if (selectedAction === "add") {
 
         document.getElementById("status").innerText =
-          "Please choose ADD, REMOVE, or MOVE.";
+          "ADD COMPLETE\n" +
+          "Part: " + partNumber + "\n" +
+          "Location: " + location + "\n" +
+          "Quantity added: " + quantity + "\n" +
+          "Available now: " + data.quantity;
 
-        return;
-      }
-
-
-      if (!partNumber) {
-
-        document.getElementById("status").innerText =
-          "Please enter or scan a part number.";
-
-        return;
-      }
-
-
-      if (!location) {
-
-        document.getElementById("status").innerText =
-          selectedAction === "move"
-            ? "Please enter the FROM location."
-            : "Please enter or scan a location.";
-
-        return;
-      }
-
-
-      if (selectedAction === "move" && !toLocation) {
-
-        document.getElementById("status").innerText =
-          "Please enter the TO location.";
-
-        return;
-      }
-
-
-      if (selectedAction === "move" &&
-          location === toLocation) {
-
-        document.getElementById("status").innerText =
-          "FROM and TO locations cannot be the same.";
-
-        return;
-      }
-
-
-      if (!quantity || quantity <= 0) {
-
-        document.getElementById("status").innerText =
-          "Please enter a valid quantity.";
-
-        return;
-      }
-      const processButton =
-      document.getElementById("processButton");
-
-      processButton.disabled = true;
-      processButton.innerText = "PROCESSING...";
-
-      document.getElementById("status").innerText =
-        selectedAction === "add"
-          ? "Adding inventory..."
-          : selectedAction === "remove"
-          ? "Removing inventory..."
-          : "Moving inventory...";
-
-
-      let url =
-        WEB_APP_URL +
-        "?action=" +
-        encodeURIComponent(selectedAction) +
-        "&partNumber=" +
-        encodeURIComponent(partNumber) +
-        "&location=" +
-        encodeURIComponent(location) +
-        "&quantity=" +
-        encodeURIComponent(quantity);
-
-
-      if (selectedAction === "move") {
-
-        url +=
-          "&toLocation=" +
-          encodeURIComponent(toLocation);
-
-      }
-
-
-      try {
-
-        const response = await fetch(url);
-
-        const data = await response.json();
-
-
-        if (data.success) {
-          document.getElementById("status").classList.remove("status-error");
-          document.getElementById("status").classList.add("status-success");
-          if (selectedAction === "add") {
-
-            document.getElementById("status").innerText =
-              "ADD COMPLETE\n" +
-              "Part: " + partNumber + "\n" +
-              "Location: " + location + "\n" +
-              "Quantity added: " + quantity + "\n" +
-              "Available now: " + data.quantity;
-
-            document.getElementById("available").innerText =
-              "Available: " + data.quantity;
+        document.getElementById("available").innerText =
+          "Available: " + data.quantity;
 
       } else if (selectedAction === "remove") {
 
-    document.getElementById("status").innerText =
-      "REMOVE COMPLETE\n" +
-      "Part: " + partNumber + "\n" +
-      "Location: " + location + "\n" +
-      "Quantity removed: " + quantity + "\n" +
-      "Available now: " + data.quantity;
+        document.getElementById("status").innerText =
+          "REMOVE COMPLETE\n" +
+          "Part: " + partNumber + "\n" +
+          "Location: " + location + "\n" +
+          "Quantity removed: " + quantity + "\n" +
+          "Available now: " + data.quantity;
 
-    document.getElementById("available").innerText =
-      "Available: " + data.quantity;
+        document.getElementById("available").innerText =
+          "Available: " + data.quantity;
 
-  } else if (selectedAction === "move") {
-
-    document.getElementById("status").innerText =
-      "MOVE COMPLETE\n" +
-      "Part: " + partNumber + "\n" +
-      "From: " + location + "\n" +
-      "To: " + toLocation + "\n" +
-      "Quantity moved: " + quantity + "\n" +
-      "Available at destination: " + data.toQuantity;
-
-    document.getElementById("available").innerText =
-      "Available at " +
-      toLocation +
-      ": " +
-      data.toQuantity;
-  }
-
-  resetFormAfterSuccess();
-          
-        } else {
-
-  document.getElementById("status").classList.remove("status-success");
-  document.getElementById("status").classList.add("status-error");
-
-  document.getElementById("status").innerText =
-    "ERROR\n" + data.message;
-}
-
-      } catch (error) {
-
-        document.getElementById("status").classList.remove("status-success");
-        document.getElementById("status").classList.add("status-error");
+      } else if (selectedAction === "move") {
 
         document.getElementById("status").innerText =
-          "CONNECTION ERROR\n" + error.message;
+          "MOVE COMPLETE\n" +
+          "Part: " + partNumber + "\n" +
+          "From: " + location + "\n" +
+          "To: " + toLocation + "\n" +
+          "Quantity moved: " + quantity + "\n" +
+          "Available at destination: " + data.toQuantity;
 
-      } finally {
-
-        processButton.disabled = false;
-        processButton.innerText = "PROCESS INVENTORY";
+        document.getElementById("available").innerText =
+          "Available at " +
+          toLocation +
+          ": " +
+          data.toQuantity;
       }
+
+      resetFormAfterSuccess();
+
+    } else {
+
+      document.getElementById("status")
+        .classList.remove("status-success");
+
+      document.getElementById("status")
+        .classList.add("status-error");
+
+      document.getElementById("status").innerText =
+        "ERROR\n" + data.message;
     }
+
+  } catch (error) {
+
+    document.getElementById("status")
+      .classList.remove("status-success");
+
+    document.getElementById("status")
+      .classList.add("status-error");
+
+    document.getElementById("status").innerText =
+      "CONNECTION ERROR\n" + error.message;
+
+  } finally {
+
+    processButton.disabled = false;
+    processButton.innerText = "PROCESS INVENTORY";
+  }
+}
 
   </script>
 
