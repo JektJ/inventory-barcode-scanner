@@ -142,8 +142,7 @@
     <input
       type="text"
       id="partNumber"
-      placeholder="Scan or enter part number"
-      oninput="this.value = this.value.toUpperCase()">
+      placeholder="Scan or enter part number">
 
     <button
       class="secondary"
@@ -163,8 +162,7 @@
     <input
       type="text"
       id="location"
-      placeholder="Scan or enter location"
-      oninput="this.value = this.value.toUpperCase()">
+      placeholder="Scan or enter location">
 
     <button
       class="secondary"
@@ -187,8 +185,7 @@
     <input
       type="text"
       id="toLocation"
-      placeholder="Scan or enter destination location"
-      oninput="this.value = this.value.toUpperCase()">
+      placeholder="Scan or enter destination location">
 
     <button
       class="secondary"
@@ -239,19 +236,7 @@
 
     let scanLocked = false;
 
-    function resetFormAfterSuccess() {
 
-      document.getElementById("partNumber").value = "";
-      document.getElementById("location").value = "";
-      document.getElementById("toLocation").value = "";
-      document.getElementById("quantity").value = 1;
-
-      scanMode = "part";
-      scanLocked = false;
-
-      document.getElementById("instruction").innerText =
-        "Scan Part Number";
-    }
     function selectAction(action) {
 
       selectedAction = action;
@@ -631,46 +616,23 @@
 
         if (data.success) {
 
-  if (selectedAction === "add") {
+          document.getElementById("available").innerText =
+            "Available: " + data.quantity;
 
-    document.getElementById("status").innerText =
-      "ADD COMPLETE\n" +
-      "Part: " + partNumber + "\n" +
-      "Location: " + location + "\n" +
-      "Quantity added: " + quantity + "\n" +
-      "Available now: " + data.quantity;
 
-    document.getElementById("available").innerText =
-      "Available: " + data.quantity;
+          document.getElementById("status").innerText =
+            "Inventory lookup complete.";
 
-  } else if (selectedAction === "remove") {
+        } else {
 
-    document.getElementById("status").innerText =
-      "REMOVE COMPLETE\n" +
-      "Part: " + partNumber + "\n" +
-      "Location: " + location + "\n" +
-      "Quantity removed: " + quantity + "\n" +
-      "Available now: " + data.quantity;
+          document.getElementById("available").innerText =
+            "Available: —";
 
-    document.getElementById("available").innerText =
-      "Available: " + data.quantity;
 
-  } else if (selectedAction === "move") {
+          document.getElementById("status").innerText =
+            "Error: " + data.message;
 
-    document.getElementById("status").innerText =
-      "MOVE COMPLETE\n" +
-      "Part: " + partNumber + "\n" +
-      "From: " + location + "\n" +
-      "To: " + toLocation + "\n" +
-      "Quantity moved: " + quantity + "\n" +
-      "Available at destination: " + data.toQuantity;
-
-    document.getElementById("available").innerText =
-      "Available at " +
-      toLocation +
-      ": " +
-      data.toQuantity;
-  }
+        }
 
       } catch (error) {
 
@@ -684,8 +646,7 @@
       }
 
     }
-    
-    
+
 
     async function processInventory() {
 
@@ -821,8 +782,832 @@
 
           }
 
-            resetFormAfterSuccess();
-          
+
+          document.getElementById("quantity").value = 1;
+
+
+          scanMode = "part";
+
+          scanLocked = false;
+
+
+          document.getElementById("instruction").innerText =
+            "Scan Part Number";
+
+        } else {
+
+          document.getElementById("status").innerText =
+            "Error: " + data.message;
+
+        }
+
+      } catch (error) {
+
+        document.getElementById("status").innerText =
+          "Connection error: " + error.message;
+
+      }
+
+    }
+
+  </script>
+
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Inventory Barcode Scanner</title>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    #instruction {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 15px 0;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      margin: 20px auto;
+    }
+
+    .field {
+      text-align: left;
+      margin: 15px 0;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      font-size: 18px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .action-buttons button {
+      width: 33.33%;
+    }
+
+    .selected {
+      outline: 3px solid black;
+    }
+
+    .secondary {
+      font-size: 16px;
+    }
+
+    #available {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Inventory Barcode Scanner</h2>
+
+
+  <div class="field">
+
+    <label>Action</label>
+
+    <div class="action-buttons">
+
+      <button
+        id="addButton"
+        onclick="selectAction('add')">
+        ADD
+      </button>
+
+      <button
+        id="removeButton"
+        onclick="selectAction('remove')">
+        REMOVE
+      </button>
+
+      <button
+        id="moveButton"
+        onclick="selectAction('move')">
+        MOVE
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div id="instruction">
+    Choose ADD, REMOVE, or MOVE
+  </div>
+
+
+  <div id="reader"></div>
+
+
+  <div class="field">
+
+    <label for="partNumber">
+      Part Number
+    </label>
+
+    <input
+      type="text"
+      id="partNumber"
+      placeholder="Scan or enter part number">
+
+    <button
+      class="secondary"
+      onclick="useManualPart()">
+      USE PART NUMBER
+    </button>
+
+  </div>
+
+
+  <div class="field">
+
+    <label for="location">
+      <span id="locationLabel">Location</span>
+    </label>
+
+    <input
+      type="text"
+      id="location"
+      placeholder="Scan or enter location">
+
+    <button
+      class="secondary"
+      onclick="useManualLocation()">
+      USE LOCATION
+    </button>
+
+  </div>
+
+
+  <div
+    class="field"
+    id="toLocationField"
+    style="display:none;">
+
+    <label for="toLocation">
+      To Location
+    </label>
+
+    <input
+      type="text"
+      id="toLocation"
+      placeholder="Scan or enter destination location">
+
+    <button
+      class="secondary"
+      onclick="useManualToLocation()">
+      USE TO LOCATION
+    </button>
+
+  </div>
+
+
+  <div id="available">
+    Available: —
+  </div>
+
+
+  <div class="field">
+
+    <label for="quantity">
+      Quantity
+    </label>
+
+    <input
+      type="number"
+      id="quantity"
+      min="1"
+      value="1">
+
+  </div>
+
+
+  <button onclick="processInventory()">
+    PROCESS INVENTORY
+  </button>
+
+
+  <div id="status"></div>
+
+
+  <script>
+
+    const WEB_APP_URL =
+      "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
+
+
+    let selectedAction = "";
+
+    let scanMode = "part";
+
+    let scanLocked = false;
+
+
+    function selectAction(action) {
+
+      selectedAction = action;
+
+      document
+        .getElementById("addButton")
+        .classList.remove("selected");
+
+      document
+        .getElementById("removeButton")
+        .classList.remove("selected");
+
+      document
+        .getElementById("moveButton")
+        .classList.remove("selected");
+
+
+      if (action === "add") {
+
+        document
+          .getElementById("addButton")
+          .classList.add("selected");
+
+      }
+
+
+      if (action === "remove") {
+
+        document
+          .getElementById("removeButton")
+          .classList.add("selected");
+
+      }
+
+
+      if (action === "move") {
+
+        document
+          .getElementById("moveButton")
+          .classList.add("selected");
+
+      }
+
+
+      if (action === "move") {
+
+        document
+          .getElementById("toLocationField")
+          .style.display = "block";
+
+      } else {
+
+        document
+          .getElementById("toLocationField")
+          .style.display = "none";
+
+      }
+
+
+      scanMode = "part";
+
+      scanLocked = false;
+
+
+      document.getElementById("available").innerText =
+        "Available: —";
+
+
+      document.getElementById("instruction").innerText =
+        "Scan Part Number";
+
+
+      document.getElementById("status").innerText =
+        action === "add"
+          ? "ADD selected."
+          : action === "remove"
+          ? "REMOVE selected."
+          : "MOVE selected.";
+
+    }
+
+
+    function onScanSuccess(decodedText, decodedResult) {
+
+      if (scanLocked) {
+        return;
+      }
+
+
+      if (!selectedAction) {
+
+        document.getElementById("status").innerText =
+          "Please choose ADD, REMOVE, or MOVE first.";
+
+        return;
+      }
+
+
+      scanLocked = true;
+
+
+      if (scanMode === "part") {
+
+        document.getElementById("partNumber").value =
+          decodedText;
+
+
+        document.getElementById("instruction").innerText =
+          "Scan From Location";
+
+
+        document.getElementById("status").innerText =
+          "Part captured: " + decodedText;
+
+
+        scanMode = "location";
+
+        scanLocked = false;
+
+        return;
+      }
+
+
+      if (scanMode === "location") {
+
+        document.getElementById("location").value =
+          decodedText;
+
+
+        if (selectedAction === "move") {
+
+          document.getElementById("instruction").innerText =
+            "Scan To Location";
+
+
+          document.getElementById("status").innerText =
+            "From location captured: " + decodedText;
+
+
+          scanMode = "toLocation";
+
+          scanLocked = false;
+
+          getQuantity();
+
+          return;
+        }
+
+
+        document.getElementById("instruction").innerText =
+          "Part and Location Captured";
+
+
+        document.getElementById("status").innerText =
+          "Location captured: " + decodedText;
+
+
+        scanMode = "complete";
+
+        getQuantity();
+
+      }
+
+
+      if (scanMode === "toLocation") {
+
+        document.getElementById("toLocation").value =
+          decodedText;
+
+
+        document.getElementById("instruction").innerText =
+          "Move Ready";
+
+
+        document.getElementById("status").innerText =
+          "To location captured: " + decodedText;
+
+
+        scanMode = "complete";
+
+      }
+
+    }
+
+
+    function onScanFailure(error) {
+      // Keep scanning.
+    }
+
+
+    const scanner = new Html5QrcodeScanner(
+      "reader",
+      {
+        fps: 10,
+        qrbox: {
+          width: 250,
+          height: 150
+        },
+        rememberLastUsedCamera: true
+      },
+      false
+    );
+
+
+    scanner.render(onScanSuccess, onScanFailure);
+
+
+    function useManualPart() {
+
+      const part =
+        document.getElementById("partNumber").value.trim();
+
+
+      if (!selectedAction) {
+
+        document.getElementById("status").innerText =
+          "Please choose an action first.";
+
+        return;
+      }
+
+
+      if (!part) {
+
+        document.getElementById("status").innerText =
+          "Enter a part number first.";
+
+        return;
+      }
+
+
+      scanMode = "location";
+
+
+      document.getElementById("instruction").innerText =
+        selectedAction === "move"
+          ? "Scan From Location"
+          : "Scan Location";
+
+
+      document.getElementById("status").innerText =
+        "Part entered: " + part;
+
+    }
+
+
+    function useManualLocation() {
+
+      const location =
+        document.getElementById("location").value.trim();
+
+
+      const part =
+        document.getElementById("partNumber").value.trim();
+
+
+      if (!selectedAction) {
+
+        document.getElementById("status").innerText =
+          "Please choose an action first.";
+
+        return;
+      }
+
+
+      if (!part) {
+
+        document.getElementById("status").innerText =
+          "Enter or scan the part number first.";
+
+        return;
+      }
+
+
+      if (!location) {
+
+        document.getElementById("status").innerText =
+          "Enter a location first.";
+
+        return;
+      }
+
+
+      if (selectedAction === "move") {
+
+        scanMode = "toLocation";
+
+
+        document.getElementById("instruction").innerText =
+          "Scan To Location";
+
+
+        document.getElementById("status").innerText =
+          "From location entered: " + location;
+
+
+        getQuantity();
+
+        return;
+      }
+
+
+      scanMode = "complete";
+
+
+      document.getElementById("instruction").innerText =
+        "Part and Location Captured";
+
+
+      getQuantity();
+
+    }
+
+
+    function useManualToLocation() {
+
+      const toLocation =
+        document.getElementById("toLocation").value.trim();
+
+
+      if (!toLocation) {
+
+        document.getElementById("status").innerText =
+          "Enter a destination location first.";
+
+        return;
+      }
+
+
+      scanMode = "complete";
+
+
+      document.getElementById("instruction").innerText =
+        "Move Ready";
+
+
+      document.getElementById("status").innerText =
+        "To location entered: " + toLocation;
+
+    }
+
+
+    async function getQuantity() {
+
+      const partNumber =
+        document.getElementById("partNumber").value.trim();
+
+
+      const location =
+        document.getElementById("location").value.trim();
+
+
+      if (!partNumber || !location) {
+        return;
+      }
+
+
+      document.getElementById("available").innerText =
+        "Checking inventory...";
+
+
+      const url =
+        WEB_APP_URL +
+        "?action=getQuantity" +
+        "&partNumber=" +
+        encodeURIComponent(partNumber) +
+        "&location=" +
+        encodeURIComponent(location);
+
+
+      try {
+
+        const response = await fetch(url);
+
+        const data = await response.json();
+
+
+        if (data.success) {
+
+          document.getElementById("available").innerText =
+            "Available: " + data.quantity;
+
+
+          document.getElementById("status").innerText =
+            "Inventory lookup complete.";
+
+        } else {
+
+          document.getElementById("available").innerText =
+            "Available: —";
+
+
+          document.getElementById("status").innerText =
+            "Error: " + data.message;
+
+        }
+
+      } catch (error) {
+
+        document.getElementById("available").innerText =
+          "Available: —";
+
+
+        document.getElementById("status").innerText =
+          "Connection error: " + error.message;
+
+      }
+
+    }
+
+
+    async function processInventory() {
+
+      const partNumber =
+        document.getElementById("partNumber").value.trim();
+
+
+      const location =
+        document.getElementById("location").value.trim();
+
+
+      const toLocation =
+        document.getElementById("toLocation").value.trim();
+
+
+      const quantity =
+        Number(
+          document.getElementById("quantity").value
+        );
+
+
+      if (!selectedAction) {
+
+        document.getElementById("status").innerText =
+          "Please choose ADD, REMOVE, or MOVE.";
+
+        return;
+      }
+
+
+      if (!partNumber) {
+
+        document.getElementById("status").innerText =
+          "Please enter or scan a part number.";
+
+        return;
+      }
+
+
+      if (!location) {
+
+        document.getElementById("status").innerText =
+          selectedAction === "move"
+            ? "Please enter the FROM location."
+            : "Please enter or scan a location.";
+
+        return;
+      }
+
+
+      if (selectedAction === "move" && !toLocation) {
+
+        document.getElementById("status").innerText =
+          "Please enter the TO location.";
+
+        return;
+      }
+
+
+      if (selectedAction === "move" &&
+          location === toLocation) {
+
+        document.getElementById("status").innerText =
+          "FROM and TO locations cannot be the same.";
+
+        return;
+      }
+
+
+      if (!quantity || quantity <= 0) {
+
+        document.getElementById("status").innerText =
+          "Please enter a valid quantity.";
+
+        return;
+      }
+
+
+      document.getElementById("status").innerText =
+        selectedAction === "add"
+          ? "Adding inventory..."
+          : selectedAction === "remove"
+          ? "Removing inventory..."
+          : "Moving inventory...";
+
+
+      let url =
+        WEB_APP_URL +
+        "?action=" +
+        encodeURIComponent(selectedAction) +
+        "&partNumber=" +
+        encodeURIComponent(partNumber) +
+        "&location=" +
+        encodeURIComponent(location) +
+        "&quantity=" +
+        encodeURIComponent(quantity);
+
+
+      if (selectedAction === "move") {
+
+        url +=
+          "&toLocation=" +
+          encodeURIComponent(toLocation);
+
+      }
+
+
+      try {
+
+        const response = await fetch(url);
+
+        const data = await response.json();
+
+
+        if (data.success) {
+
+          document.getElementById("status").innerText =
+            data.message;
+
+
+          if (selectedAction === "move") {
+
+            document.getElementById("available").innerText =
+              "Available at " +
+              toLocation +
+              ": " +
+              data.toQuantity;
+
+          } else {
+
+            document.getElementById("available").innerText =
+              "Available: " + data.quantity;
+
+          }
+
+
+          document.getElementById("quantity").value = 1;
+
+
+          scanMode = "part";
+
+          scanLocked = false;
+
+
+          document.getElementById("instruction").innerText =
+            "Scan Part Number";
 
         } else {
 
