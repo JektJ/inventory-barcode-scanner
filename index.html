@@ -582,95 +582,74 @@
 
     async function getQuantity() {
 
-      const partNumber =
-        document.getElementById("partNumber").value.trim();
+  const partNumber =
+    document.getElementById("partNumber").value.trim();
 
+  const location =
+    document.getElementById("location").value.trim();
 
-      const location =
-        document.getElementById("location").value.trim();
+  if (!partNumber || !location) {
+    return;
+  }
 
+  document.getElementById("available").innerText =
+    "Checking inventory...";
 
-      if (!partNumber || !location) {
-        return;
-      }
+  const url =
+    WEB_APP_URL +
+    "?action=getQuantity" +
+    "&partNumber=" +
+    encodeURIComponent(partNumber) +
+    "&location=" +
+    encodeURIComponent(location);
 
+  try {
+
+    const response = await fetch(url);
+
+    const data = await response.json();
+
+    if (data.success) {
 
       document.getElementById("available").innerText =
-        "Checking inventory...";
+        "Available: " + data.quantity;
 
+      document.getElementById("status").innerText =
+        "Inventory lookup complete.";
 
-      const url =
-        WEB_APP_URL +
-        "?action=getQuantity" +
-        "&partNumber=" +
-        encodeURIComponent(partNumber) +
-        "&location=" +
-        encodeURIComponent(location);
+    } else {
 
+      document.getElementById("available").innerText =
+        "Available: —";
 
-      try {
-
-        const response = await fetch(url);
-
-        const data = await response.json();
-
-
-        if (data.success) {
-
-          if (selectedAction === "add") {
-
-            document.getElementById("status").innerText =
-              "ADD COMPLETE\n" +
-              "Part: " + partNumber + "\n" +
-              "Location: " + location + "\n" +
-              "Quantity added: " + quantity + "\n" +
-              "Available now: " + data.quantity;
-
-            document.getElementById("available").innerText =
-              "Available: " + data.quantity;
-
-        } else if (selectedAction === "remove") {
-
-          document.getElementById("status").innerText =
-            "REMOVE COMPLETE\n" +
-            "Part: " + partNumber + "\n" +
-            "Location: " + location + "\n" +
-            "Quantity removed: " + quantity + "\n" +
-            "Available now: " + data.quantity;
-
-          document.getElementById("available").innerText =
-            "Available: " + data.quantity;
-
-        } else if (selectedAction === "move") {
-
-          document.getElementById("status").innerText =
-            "MOVE COMPLETE\n" +
-            "Part: " + partNumber + "\n" +
-            "From: " + location + "\n" +
-            "To: " + toLocation + "\n" +
-            "Quantity moved: " + quantity + "\n" +
-            "Available at destination: " + data.toQuantity;
-
-          document.getElementById("available").innerText =
-            "Available at " +
-            toLocation +
-            ": " +
-            data.toQuantity;
-        
-      } catch (error) {
-
-        document.getElementById("available").innerText =
-          "Available: —";
-
-
-        document.getElementById("status").innerText =
-          "Connection error: " + error.message;
-
-      }
-
+      document.getElementById("status").innerText =
+        "Error: " + data.message;
     }
 
+  } catch (error) {
 
+    document.getElementById("available").innerText =
+      "Available: —";
+
+    document.getElementById("status").innerText =
+      "Connection error: " + error.message;
+  }
+}
+
+
+function resetFormAfterSuccess() {
+
+  document.getElementById("partNumber").value = "";
+  document.getElementById("location").value = "";
+  document.getElementById("toLocation").value = "";
+  document.getElementById("quantity").value = 1;
+
+  scanMode = "part";
+  scanLocked = false;
+
+  document.getElementById("instruction").innerText =
+    "Scan Part Number";
+}
     async function processInventory() {
 
       const partNumber =
