@@ -267,6 +267,12 @@
     function selectAction(action) {
 
       selectedAction = action;
+      document.getElementById("status").classList.remove(
+        "status-success",
+        "status-error"
+      );
+      
+      document.getElementById("status").innerText = "";
 
       document
         .getElementById("addButton")
