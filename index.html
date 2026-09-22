@@ -448,10 +448,10 @@
     document.getElementById("status").innerText =
       "Location captured: " + decodedText.toUpperCase();
 
-    // ADD does not need an inventory lookup.
-    // REMOVE still checks the current available quantity.
+    scanMode = "complete";
+
     if (selectedAction !== "add") {
-      getQuantity();
+        getQuantity();
     } // end inventory lookup check
 
   // ============================================================
@@ -605,11 +605,9 @@
 
       // ADD does not need an inventory lookup.
       // REMOVE still checks the current available quantity.
-      if (selectedAction !== "add"){
+      if (selectedAction !== "add") {
         getQuantity();
-
-    } //end inventory lookup check
-
+      } // end inventory lookup check
 
     function useManualToLocation() {
 
