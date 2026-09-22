@@ -448,12 +448,11 @@
     document.getElementById("status").innerText =
       "Location captured: " + decodedText.toUpperCase();
 
-    scanMode = "complete";
-
-    getQuantity();
-
-  } // end Location scan
-
+    // ADD does not need an inventory lookup.
+    // REMOVE still checks the current available quantity.
+    if (selectedAction !== "add") {
+      getQuantity();
+    } // end inventory lookup check
 
   // ============================================================
   // TO LOCATION SCAN
@@ -604,9 +603,12 @@
         "Part and Location Captured";
 
 
-      getQuantity();
+      // ADD does not need an inventory lookup.
+      // REMOVE still checks the current available quantity.
+      if (selectedAction !== "add"){
+        getQuantity();
 
-    }
+    } //end inventory lookup check
 
 
     function useManualToLocation() {
