@@ -70,7 +70,52 @@
       font-weight: bold;
       white-space: pre-line;
     }
+  /* ============================================================
+   QUANTITY 10-KEY POPUP
+   ============================================================ */
 
+.quantity-popup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantity-keypad {
+  width: 90%;
+  max-width: 360px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.quantity-display {
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.keypad-grid button {
+  margin: 0;
+  padding: 18px;
+  font-size: 26px;
+}
+
+.keypad-add {
+  margin-top: 12px;
+  font-size: 22px;
+}
   </style>
 
 </head>
@@ -145,11 +190,62 @@
       type="number"
       id="quantity"
       min="1"
-      inputmode="numeric"
-      placeholder="Enter quantity">
+      inputmode="none"
+      placeholder="Enter quantity"
+      readonly
+      onclick="showQuantityKeypad()">
 
   </div>
 
+  <!-- ========================================================
+     QUANTITY 10-KEY POPUP
+     ======================================================== -->
+
+<div id="quantityPopup" class="quantity-popup">
+
+  <div class="quantity-keypad">
+
+    <div class="quantity-display">
+      Quantity:
+      <span id="quantityDisplay">0</span>
+    </div>
+
+    <div class="keypad-grid">
+
+      <button type="button" onclick="enterQuantity('1')">1</button>
+      <button type="button" onclick="enterQuantity('2')">2</button>
+      <button type="button" onclick="enterQuantity('3')">3</button>
+
+      <button type="button" onclick="enterQuantity('4')">4</button>
+      <button type="button" onclick="enterQuantity('5')">5</button>
+      <button type="button" onclick="enterQuantity('6')">6</button>
+
+      <button type="button" onclick="enterQuantity('7')">7</button>
+      <button type="button" onclick="enterQuantity('8')">8</button>
+      <button type="button" onclick="enterQuantity('9')">9</button>
+
+      <button type="button" onclick="clearQuantity()">CLR</button>
+      <button type="button" onclick="enterQuantity('0')">0</button>
+      <button type="button" onclick="backspaceQuantity()">⌫</button>
+
+    </div>
+
+    <button
+      type="button"
+      class="keypad-add"
+      onclick="submitQuantity()">
+      ADD INVENTORY
+    </button>
+
+    <button
+      type="button"
+      onclick="hideQuantityKeypad()">
+      CANCEL
+    </button>
+
+  </div>
+
+</div>
 
   <button onclick="testAdd()">
     ADD INVENTORY
@@ -244,7 +340,94 @@
       }, 100);
 
     } // end lockLocation()
+    // ============================================================
+// QUANTITY 10-KEY POPUP
+// ============================================================
 
+function showQuantityKeypad() {
+
+  document.getElementById("quantityPopup").style.display =
+    "flex";
+
+  updateQuantityDisplay();
+
+} // end showQuantityKeypad()
+
+
+function hideQuantityKeypad() {
+
+  document.getElementById("quantityPopup").style.display =
+    "none";
+
+} // end hideQuantityKeypad()
+
+
+function enterQuantity(number) {
+
+  const quantity =
+    document.getElementById("quantity");
+
+  quantity.value =
+    quantity.value + number;
+
+  updateQuantityDisplay();
+
+} // end enterQuantity()
+
+
+function backspaceQuantity() {
+
+  const quantity =
+    document.getElementById("quantity");
+
+  quantity.value =
+    quantity.value.slice(0, -1);
+
+  updateQuantityDisplay();
+
+} // end backspaceQuantity()
+
+
+function clearQuantity() {
+
+  document.getElementById("quantity").value =
+    "";
+
+  updateQuantityDisplay();
+
+} // end clearQuantity()
+
+
+function updateQuantityDisplay() {
+
+  const quantity =
+    document.getElementById("quantity").value;
+
+  document.getElementById("quantityDisplay").innerText =
+    quantity || "0";
+
+} // end updateQuantityDisplay()
+
+
+function submitQuantity() {
+
+  const quantity =
+    document.getElementById("quantity").value;
+
+  if (!quantity || Number(quantity) <= 0) {
+
+    document.getElementById("status").innerText =
+      "Enter a valid quantity.";
+
+    return;
+
+  } // end quantity check
+
+  hideQuantityKeypad();
+
+  testAdd();
+
+} // end submitQuantity()
 
 // ============================================================
 // ADD INVENTORY
