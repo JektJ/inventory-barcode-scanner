@@ -213,67 +213,164 @@
     } // end lockLocation()
 
 
-    // ============================================================
-    // TEST ADD
-    // This does NOT send anything to Google Sheets yet.
-    // ============================================================
+// ============================================================
+// ADD INVENTORY
+// Sends one ADD transaction to the existing Apps Script backend.
+// After success, Location stays locked while Part and Quantity clear.
+// ============================================================
 
-    function testAdd() {
+async function testAdd() {
 
-      const partNumber =
-        document.getElementById("partNumber").value.trim();
+  const partNumber =
+    document.getElementById("partNumber").value.trim().toUpperCase();
 
-      const quantity =
-        Number(document.getElementById("quantity").value);
-
-
-      if (!lockedLocation) {
-
-        document.getElementById("status").innerText =
-          "Choose a location first.";
-
-        return;
-
-      } // end location check
+  const quantity =
+    Number(document.getElementById("quantity").value);
 
 
-      if (!partNumber) {
+  // ----------------------------------------------------------
+  // VALIDATION
+  // ----------------------------------------------------------
 
-        document.getElementById("status").innerText =
-          "Scan or enter a part number.";
+  if (!lockedLocation) {
 
-        return;
+    document.getElementById("status").innerText =
+      "Choose a location first.";
 
-      } // end part number check
+    return;
+
+  } // end location check
 
 
-      if (!quantity || quantity <= 0) {
+  if (!partNumber) {
 
-        document.getElementById("status").innerText =
-          "Enter a valid quantity.";
+    document.getElementById("status").innerText =
+      "Scan or enter a part number.";
 
-        return;
+    return;
 
-      } // end quantity check
+  } // end part number check
 
+
+  if (!quantity || quantity <= 0) {
+
+    document.getElementById("status").innerText =
+      "Enter a valid quantity.";
+
+    return;
+
+  } // end quantity check
+
+
+  // ----------------------------------------------------------
+  // PREPARE TRANSACTION
+  // ----------------------------------------------------------
+
+  const addButton =
+    document.querySelector('button[onclick="testAdd()"]');
+
+
+  addButton.disabled = true;
+  addButton.innerText = "PROCESSING...";
+
+
+  document.getElementById("status").innerText =
+    "Adding inventory...";
+
+
+  // ----------------------------------------------------------
+  // BUILD APPS SCRIPT REQUEST
+  // ----------------------------------------------------------
+
+  const webAppUrl =
+    "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
+
+
+  const url =
+    webAppUrl +
+    "?action=add" +
+    "&part=" + encodeURIComponent(partNumber) +
+    "&location=" + encodeURIComponent(lockedLocation) +
+    "&quantity=" + encodeURIComponent(quantity);
+
+
+  // ----------------------------------------------------------
+  // SEND TRANSACTION
+  // ----------------------------------------------------------
+
+  try {
+
+    const response =
+      await fetch(url);
+
+
+    const result =
+      await response.json();
+
+
+    // --------------------------------------------------------
+    // SUCCESS
+    // --------------------------------------------------------
+
+    if (result.success) {
 
       document.getElementById("status").innerText =
-        "TEST ADD\n" +
+        "ADD COMPLETE\n" +
         "Location: " + lockedLocation + "\n" +
         "Part: " + partNumber + "\n" +
-        "Quantity: " + quantity;
+        "Quantity added: " + quantity + "\n" +
+        "Available now: " + result.quantity;
 
 
-      // Clear ONLY the information for this part.
+      // Clear ONLY the completed part.
+      // The locked Location remains unchanged.
+
       document.getElementById("partNumber").value = "";
 
       document.getElementById("quantity").value = "";
 
 
-      // Prepare immediately for the next box.
+      // Prepare for the next box at this same location.
+
       document.getElementById("partNumber").focus();
 
-    } // end testAdd()
+    } else {
+
+      // ------------------------------------------------------
+      // APPS SCRIPT REPORTED AN ERROR
+      // ------------------------------------------------------
+
+      document.getElementById("status").innerText =
+        "ADD FAILED\n" +
+        result.message;
+
+    } // end success/failure check
+
+
+  } catch (error) {
+
+    // --------------------------------------------------------
+    // CONNECTION / RESPONSE ERROR
+    // --------------------------------------------------------
+
+    document.getElementById("status").innerText =
+      "CONNECTION ERROR\n" +
+      error.message;
+
+  } finally {
+
+    // --------------------------------------------------------
+    // ALWAYS RESTORE BUTTON
+    // --------------------------------------------------------
+
+    addButton.disabled = false;
+
+    addButton.innerText =
+      "ADD INVENTORY";
+
+  } // end try/catch/finally
+
+} // end testAdd()
 
 
     // ============================================================
