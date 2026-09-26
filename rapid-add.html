@@ -145,7 +145,8 @@
       type="number"
       id="quantity"
       min="1"
-      placeholder="Enter quantity"
+      inputmode="numeric"
+      placeholder="Enter quantity">
 
   </div>
 
@@ -449,7 +450,17 @@ async function testAdd() {
       document.getElementById("location").focus();
 
     } // end changeLocation()
+    // ============================================================
+    // INITIAL PAGE FOCUS
+    // Start Rapid Add ready for a Location scan.
+    // ============================================================
 
+    window.addEventListener("load", function() {
+
+      document.getElementById("location").focus();
+
+}); // end page load
+    
   </script>
 
 </body>
