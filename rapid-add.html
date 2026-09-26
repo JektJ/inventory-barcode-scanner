@@ -1,1 +1,317 @@
+<!DOCTYPE html>
+<html>
 
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <title>Rapid Inventory Add</title>
+
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    #locationBanner {
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      border: 3px solid #333;
+      border-radius: 8px;
+      background-color: #f2f2f2;
+    }
+
+    .field {
+      margin: 18px 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      font-size: 20px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      white-space: pre-line;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+  <h1>Rapid Inventory Add</h1>
+
+
+  <!-- ========================================================
+       CURRENT LOCATION
+       ======================================================== -->
+
+  <div id="locationBanner">
+    NO LOCATION SELECTED
+  </div>
+
+
+  <div class="field">
+
+    <label for="location">
+      Location
+    </label>
+
+    <input
+      type="text"
+      id="location"
+      placeholder="Scan or enter location"
+      oninput="this.value = this.value.toUpperCase()">
+
+    <button onclick="lockLocation()">
+      USE LOCATION
+    </button>
+
+  </div>
+
+
+  <!-- ========================================================
+       PART NUMBER
+       ======================================================== -->
+
+  <div class="field">
+
+    <label for="partNumber">
+      Part Number
+    </label>
+
+    <input
+      type="text"
+      id="partNumber"
+      placeholder="Scan or enter part number"
+      oninput="this.value = this.value.toUpperCase()">
+
+  </div>
+
+
+  <!-- ========================================================
+       QUANTITY
+       ======================================================== -->
+
+  <div class="field">
+
+    <label for="quantity">
+      Quantity
+    </label>
+
+    <input
+      type="number"
+      id="quantity"
+      min="1"
+      value="1">
+
+  </div>
+
+
+  <button onclick="testAdd()">
+    ADD INVENTORY
+  </button>
+
+
+  <button onclick="changeLocation()">
+    CHANGE LOCATION
+  </button>
+
+
+  <div id="status"></div>
+
+
+  <script>
+
+    // ============================================================
+    // RAPID ADD WORKFLOW STATE
+    // ============================================================
+
+    let lockedLocation = "";
+
+
+    // ============================================================
+    // LOCK LOCATION
+    // ============================================================
+
+    function lockLocation() {
+
+      const location =
+        document.getElementById("location").value.trim();
+
+      if (!location) {
+
+        document.getElementById("status").innerText =
+          "Scan or enter a location first.";
+
+        return;
+
+      } // end blank location check
+
+
+      lockedLocation =
+        location.toUpperCase();
+
+
+      document.getElementById("location").value =
+        lockedLocation;
+
+
+      document.getElementById("location").disabled =
+        true;
+
+
+      document.getElementById("locationBanner").innerText =
+        "CURRENT LOCATION: " + lockedLocation;
+
+
+      document.getElementById("status").innerText =
+        "Location locked.";
+
+
+      document.getElementById("partNumber").focus();
+
+    } // end lockLocation()
+
+
+    // ============================================================
+    // TEST ADD
+    // This does NOT send anything to Google Sheets yet.
+    // ============================================================
+
+    function testAdd() {
+
+      const partNumber =
+        document.getElementById("partNumber").value.trim();
+
+      const quantity =
+        Number(document.getElementById("quantity").value);
+
+
+      if (!lockedLocation) {
+
+        document.getElementById("status").innerText =
+          "Choose a location first.";
+
+        return;
+
+      } // end location check
+
+
+      if (!partNumber) {
+
+        document.getElementById("status").innerText =
+          "Scan or enter a part number.";
+
+        return;
+
+      } // end part number check
+
+
+      if (!quantity || quantity <= 0) {
+
+        document.getElementById("status").innerText =
+          "Enter a valid quantity.";
+
+        return;
+
+      } // end quantity check
+
+
+      document.getElementById("status").innerText =
+        "TEST ADD\n" +
+        "Location: " + lockedLocation + "\n" +
+        "Part: " + partNumber + "\n" +
+        "Quantity: " + quantity;
+
+
+      // Clear ONLY the information for this part.
+      document.getElementById("partNumber").value = "";
+
+      document.getElementById("quantity").value = 1;
+
+
+      // Prepare immediately for the next box.
+      document.getElementById("partNumber").focus();
+
+    } // end testAdd()
+
+
+    // ============================================================
+    // CHANGE LOCATION
+    // ============================================================
+
+    function changeLocation() {
+
+      lockedLocation = "";
+
+
+      document.getElementById("location").disabled =
+        false;
+
+
+      document.getElementById("location").value = "";
+
+
+      document.getElementById("partNumber").value = "";
+
+
+      document.getElementById("quantity").value = 1;
+
+
+      document.getElementById("locationBanner").innerText =
+        "NO LOCATION SELECTED";
+
+
+      document.getElementById("status").innerText =
+        "Ready for a new location.";
+
+
+      document.getElementById("location").focus();
+
+    } // end changeLocation()
+
+  </script>
+
+</body>
+
+</html>
