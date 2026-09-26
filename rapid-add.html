@@ -231,7 +231,14 @@
         "Location locked.";
 
 
-      document.getElementById("partNumber").focus();
+      / Wait until the scanner's Enter event has completely finished,
+      // then place the cursor in Part Number.
+
+      setTimeout(function() {
+
+        document.getElementById("partNumber").focus();
+
+      }, 100);
 
     } // end lockLocation()
 
