@@ -281,13 +281,15 @@ async function testAdd() {
   // ----------------------------------------------------------
   // BUILD APPS SCRIPT REQUEST
   // ----------------------------------------------------------
-
+  const WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
+  
   const webAppUrl =
     "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
 
 
   const url =
-    webAppUrl +
+    WEB_APP_URL +
     "?action=add" +
     "&partNumber=" + encodeURIComponent(partNumber) +
     "&location=" + encodeURIComponent(lockedLocation) +
