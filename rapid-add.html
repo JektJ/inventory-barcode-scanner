@@ -103,7 +103,9 @@
       oninput="this.value = this.value.toUpperCase()"
       onkeydown="handleLocationEnter(event)">
     
-    <button onclick="lockLocation()">
+    <button
+      tabindex="-1"
+      onclick="lockLocation()">
       USE LOCATION
     </button>
 
