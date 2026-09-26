@@ -234,7 +234,7 @@
         "Location locked.";
 
 
-      / Wait until the scanner's Enter event has completely finished,
+      // Wait until the scanner's Enter event has completely finished,
       // then place the cursor in Part Number.
 
       setTimeout(function() {
@@ -335,7 +335,22 @@ async function testAdd() {
 
   try {
 
-    if (responseText.trim().startsWith("<")) {
+  // Send the ADD request to Apps Script.
+
+  const response =
+    await fetch(url);
+
+
+  // Read the response as text first.
+
+  const responseText =
+    await response.text();
+
+
+  // If Google returned HTML instead of JSON,
+  // show the response instead of trying to parse it.
+
+  if (responseText.trim().startsWith("<")) {
 
       document.getElementById("status").innerText =
         "DIAGNOSTIC RESPONSE\n\n" +
