@@ -302,12 +302,21 @@ async function testAdd() {
 
   try {
 
-    const response =
-      await fetch(url);
+    if (responseText.trim().startsWith("<")) {
 
+      document.getElementById("status").innerText =
+        "DIAGNOSTIC RESPONSE\n\n" +
+        responseText.substring(0, 300);
+
+      return;
+
+    } // end HTML response check
+
+    // The response does not appear to be HTML.
+    // Now it is safe to parse it as JSON.
 
     const result =
-      await response.json();
+      JSON.parse(responseText);
 
 
     // --------------------------------------------------------
