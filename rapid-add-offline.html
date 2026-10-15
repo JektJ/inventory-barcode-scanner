@@ -323,9 +323,20 @@ function showPendingCount() {
       throw new Error("Invalid offline queue.");
     }
 
+    // Count only transactions awaiting synchronization.
+    const pendingCount = queue.filter(function(item) {
+      return item.status === "PENDING";
+    }).length;
+
+    // Count successfully synchronized transactions.
+    const syncedCount = queue.filter(function(item) {
+      return item.status === "SYNCED";
+    }).length;
+
     status.innerText =
       "OFFLINE MODE\n" +
-      "Pending transactions: " + queue.length;
+      "Pending transactions: " + pendingCount + "\n" +
+      "Synced transactions: " + syncedCount;
 
   } catch (error) {
 
