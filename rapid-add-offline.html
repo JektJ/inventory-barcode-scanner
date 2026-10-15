@@ -889,20 +889,81 @@ function prepareManualSyncConfirmation() {
   const status = document.getElementById("status");
 
   try {
+    // Locate our one verified test transaction.
     const transaction = getPendingTestTransaction();
 
-    status.innerText =
-      "MANUAL CONFIRMATION READY\n" +
+    const message =
+      "MANUAL SYNC CONFIRMATION\n\n" +
       "Part: " + transaction.partNumber + "\n" +
       "Location: " + transaction.location + "\n" +
       "Quantity: " + transaction.quantity + "\n" +
       "Transaction ID: " + transaction.id + "\n\n" +
-      "Verify that Google Sheets reports COMPLETED.\n" +
-      "No local changes have been made.";
+      "Have you personally verified that Google Sheets " +
+      "reports COMPLETED for this exact transaction?\n\n" +
+      "Press OK only if your JSON backup is saved " +
+      "and the server response is confirmed.";
+
+    if (!window.confirm(message)) {
+      status.innerText =
+        "MANUAL CONFIRMATION CANCELLED\n" +
+        "Local queue unchanged.";
+      return;
+    }
+
+    const storageKey = "rapidAddOfflineQueueV1";
+    const saved = localStorage.getItem(storageKey);
+
+    if (saved === null) {
+      throw new Error("Offline queue not found.");
+    }
+
+    const queue = JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Invalid offline queue.");
+    }
+
+    const matches = queue.filter(function(item) {
+      return item.id === transaction.id &&
+        item.partNumber === "OFFLINE-TEST-001" &&
+        item.location === "TEST" &&
+        item.quantity === 1 &&
+        item.action === "ADD" &&
+        item.status === "PENDING";
+    });
+
+    if (matches.length !== 1) {
+      throw new Error(
+        "Expected exactly one matching pending transaction."
+      );
+    }
+
+    // Preserve the transaction and its original information.
+    // Change only its status.
+    const updatedQueue = queue.map(function(item) {
+      if (item === matches[0]) {
+        return Object.assign({}, item, {
+          status: "SYNCED"
+        });
+      }
+      return item;
+    });
+
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify(updatedQueue)
+    );
+
+    status.innerText =
+      "MANUAL CONFIRMATION SAVED\n" +
+      "Transaction: " + transaction.id + "\n" +
+      "Local status: SYNCED\n" +
+      "Original transaction preserved.\n" +
+      "No inventory changes were sent.";
 
   } catch (error) {
     status.innerText =
-      "MANUAL CONFIRMATION NOT READY\n" +
+      "MANUAL CONFIRMATION FAILED\n" +
       error.message;
   }
 }
