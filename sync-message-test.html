@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>Scanner Communication Test</title>
+</head>
+<body style="font-family:Arial;padding:20px">
+
+  <h2>Scanner Communication Test</h2>
+
+  <button onclick="sendTestMessage()"
+          style="padding:15px;font-size:18px">
+    SEND TEST MESSAGE
+  </button>
+
+  <p id="result"></p>
+
+  <script>
+    function sendTestMessage() {
+      const message = {
+        type: "OFFLINE_SYNC_TEST",
+        transactionId:
+          "cdeaf090-fb00-4e9a-b2fe-2a9fc1e72895",
+        status: "TEST_MESSAGE_ONLY"
+      };
+
+      if (!window.opener || window.opener.closed) {
+        document.getElementById("result").innerText =
+          "No scanner window connected.";
+        return;
+      }
+
+      window.opener.postMessage(
+        message,
+        window.location.origin
+      );
+
+      document.getElementById("result").innerText =
+        "Test message sent.";
+    }
+  </script>
+</body>
+</html>
