@@ -12,7 +12,699 @@
 
     body {
       font-family: Arial, sans-serif;
-      max-width: 500px;
+      max-width: 500px;<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rapid Inventory Add Offline</title>
+<style>
+@layer sandbox-defaults{html,body,#root{margin:0;padding:0}}
+</style>
+</head>
+
+
+  <h1>Rapid Inventory Add Offline</h1>
+
+
+  <!-- ========================================================
+       CURRENT LOCATION
+       ======================================================== -->
+
+  <div id="locationBanner">
+    NO LOCATION SELECTED
+  </div>
+
+
+  <div class="field">
+
+    <label for="location">
+      Location
+    </label>
+
+    <input type="text" id="location" placeholder="Scan or enter location" oninput="this.value = this.value.toUpperCase()" onkeydown="handleLocationEnter(event)">
+    
+    <button tabindex="-1" onclick="lockLocation()">
+      USE LOCATION
+    </button>
+
+  </div>
+
+
+  <!-- ========================================================
+       PART NUMBER
+       ======================================================== -->
+
+  <div class="field">
+
+    <label for="partNumber">
+      Part Number
+    </label>
+
+    <input type="text" id="partNumber" placeholder="Scan or enter part number" oninput="this.value = this.value.toUpperCase()">
+
+  </div>
+
+
+  <!-- ========================================================
+       QUANTITY
+       ======================================================== -->
+
+  <div class="field">
+
+    <label for="quantity">
+      Quantity
+    </label>
+
+    <input type="number" id="quantity" min="1" inputmode="none" placeholder="Enter quantity" readonly="" onclick="showQuantityKeypad()">
+
+  </div>
+
+  <!-- ========================================================
+     QUANTITY 10-KEY POPUP
+     ======================================================== -->
+
+<div id="quantityPopup" class="quantity-popup">
+
+  <div class="quantity-keypad">
+
+    <div class="quantity-display">
+      Quantity:
+      <span id="quantityDisplay">0</span>
+    </div>
+
+    <div class="keypad-grid">
+
+      <button type="button" onclick="enterQuantity('1')">1</button>
+      <button type="button" onclick="enterQuantity('2')">2</button>
+      <button type="button" onclick="enterQuantity('3')">3</button>
+
+      <button type="button" onclick="enterQuantity('4')">4</button>
+      <button type="button" onclick="enterQuantity('5')">5</button>
+      <button type="button" onclick="enterQuantity('6')">6</button>
+
+      <button type="button" onclick="enterQuantity('7')">7</button>
+      <button type="button" onclick="enterQuantity('8')">8</button>
+      <button type="button" onclick="enterQuantity('9')">9</button>
+
+      <button type="button" onclick="clearQuantity()">CLR</button>
+      <button type="button" onclick="enterQuantity('0')">0</button>
+      <button type="button" onclick="backspaceQuantity()">⌫</button>
+
+    </div>
+
+    <button type="button" class="keypad-add" onclick="submitQuantity()">
+      ADD INVENTORY
+    </button>
+
+    <button type="button" onclick="hideQuantityKeypad()">
+      CANCEL
+    </button>
+
+  </div>
+
+</div>
+
+  <button onclick="testAdd()">
+    ADD INVENTORY
+  </button>
+
+
+  <button onclick="changeLocation()">
+    CHANGE LOCATION
+  </button>
+  <!-- ========================================================
+     OFFLINE TRANSACTION VIEWER
+     ======================================================== -->
+
+<button type="button" onclick="togglePendingTransactions()">
+  VIEW PENDING
+</button>
+<button type="button" onclick="exportPendingBackup()">
+  EXPORT BACKUP
+</button>
+<div id="pendingViewer" style="display: none;">
+
+  <h2>Transaction History</h2>
+
+  <div id="pendingList"></div>
+
+</div>
+
+  <div id="status">OFFLINE MODE<br>Pending transactions: 0</div>
+
+
+  <script>
+
+
+    // RAPID ADD WORKFLOW STATE
+    // ============================================================
+
+    let lockedLocation = "";
+    // ============================================================
+// OFFLINE QUEUE STATUS
+// ============================================================
+
+function showPendingCount() {
+
+  const status =
+    document.getElementById("status");
+
+  try {
+
+    const saved =
+      localStorage.getItem("rapidAddOfflineQueueV1");
+
+    const queue =
+      saved === null ? [] : JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Invalid offline queue.");
+    }
+
+    // Count only transactions awaiting synchronization.
+    const pendingCount = queue.filter(function(item) {
+      return item.status === "PENDING";
+    }).length;
+
+    // Count successfully synchronized transactions.
+    const syncedCount = queue.filter(function(item) {
+      return item.status === "SYNCED";
+    }).length;
+
+    status.innerText =
+      "OFFLINE MODE\n" +
+      "Pending transactions: " + pendingCount + "\n" +
+      "Synced transactions: " + syncedCount;
+
+  } catch (error) {
+
+    status.innerText =
+      "QUEUE ERROR\n" +
+      error.message;
+
+  }
+
+} // end showPendingCount()
+
+/* ============================================================
+   VIEW PENDING TRANSACTIONS
+   ============================================================ */
+
+function togglePendingTransactions() {
+
+  const viewer =
+    document.getElementById("pendingViewer");
+
+  if (viewer.style.display === "none") {
+
+    showPendingTransactions();
+
+    viewer.style.display = "block";
+
+  } else {
+
+    viewer.style.display = "none";
+
+  }
+
+} // end togglePendingTransactions()
+
+
+function showPendingTransactions() {
+
+  const list =
+    document.getElementById("pendingList");
+
+  // Clear the previous display.
+  list.replaceChildren();
+
+  try {
+
+    const saved =
+      localStorage.getItem("rapidAddOfflineQueueV1");
+
+    const queue =
+      saved === null ? [] : JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Invalid offline queue.");
+    }
+
+    if (queue.length === 0) {
+
+      list.innerText =
+        "No saved transactions.";
+
+      return;
+
+    }
+
+    queue.forEach(function(transaction, index) {
+
+      const item =
+        document.createElement("div");
+
+      item.style.border =
+        "1px solid #aaa";
+
+      item.style.borderRadius =
+        "8px";
+
+      item.style.padding =
+        "12px";
+
+      item.style.marginBottom =
+        "10px";
+
+      item.style.background =
+        "#000000";
+
+      item.style.color = "#ffffff";
+
+      // Use textContent so scanned values are displayed
+      // as text rather than interpreted as HTML.
+      item.textContent =
+        (index + 1) + ". " +
+        transaction.partNumber + "\n" +
+        "Location: " + transaction.location + "\n" +
+        "Quantity: " + transaction.quantity + "\n" +
+        "Status: " + transaction.status +
+          (transaction.status === "SYNCED"
+            ? "\nManually confirmed synced"
+            : "");
+      item.style.whiteSpace =
+        "pre-line";
+
+      list.appendChild(item);
+      list.style.display = "block";
+      list.style.visibility = "visible";
+
+    });
+
+  } catch (error) {
+
+    list.innerText =
+      "Unable to read pending transactions.\n" +
+      error.message;
+
+  }
+
+} // end showPendingTransactions()
+
+/* ============================================================
+   EXPORT OFFLINE TRANSACTION BACKUP
+   ============================================================ */
+
+function exportPendingBackup() {
+
+  const status =
+    document.getElementById("status");
+
+  try {
+
+    const saved =
+      localStorage.getItem("rapidAddOfflineQueueV1");
+
+    if (saved === null) {
+      status.innerText = "No transactions to back up.";
+      return;
+    }
+
+    const queue = JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Invalid offline queue.");
+    }
+
+    if (queue.length === 0) {
+      status.innerText = "No transactions to back up.";
+      return;
+    }
+
+    // Preserve the exact stored transactions and their IDs.
+    const backup = {
+      format: "RapidAddOfflineBackupV1",
+      exportedAt: new Date().toISOString(),
+      transactions: queue
+    };
+
+    const blob = new Blob(
+      [JSON.stringify(backup, null, 2)],
+      { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+
+    link.download =
+      "rapid-add-backup-" +
+      new Date().toISOString().replace(/[:.]/g, "-") +
+      ".json";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // Allow the browser time to initiate the download.
+    setTimeout(function() {
+      URL.revokeObjectURL(url);
+    }, 60000);
+
+    status.innerText =
+      "BACKUP DOWNLOAD REQUESTED\n" +
+      "Transactions: " + queue.length +
+      "\nVerify the file was saved before relying on it.";
+
+  } catch (error) {
+
+    status.innerText =
+      "BACKUP FAILED\n" + error.message;
+
+  }
+
+} // end exportPendingBackup()
+
+
+    // ============================================================
+    // LOCK LOCATION
+    // ============================================================
+    
+    // ============================================================
+    // LOCATION SCAN-GUN ENTER
+    // The Bluetooth scanner sends CR / Enter after a scan.
+    // Treat Enter exactly like clicking USE LOCATION.
+    // ============================================================
+
+    function handleLocationEnter(event) {
+
+      if (event.key === "Enter") {
+
+        // Prevent the browser from treating Enter as a normal
+        // button press or moving focus somewhere unexpected.
+        event.preventDefault();
+
+
+        // Lock the scanned location and move focus to Part Number.
+        lockLocation();
+
+      } // end Enter key check
+
+    } // end handleLocationEnter()
+    
+    function lockLocation() {
+
+      const location =
+        document.getElementById("location").value.trim();
+
+      if (!location) {
+
+        document.getElementById("status").innerText =
+          "Scan or enter a location first.";
+
+        return;
+
+      } // end blank location check
+
+
+      lockedLocation =
+        location.toUpperCase();
+
+
+      document.getElementById("location").value =
+        lockedLocation;
+
+
+      document.getElementById("location").disabled =
+        true;
+
+
+      document.getElementById("locationBanner").innerText =
+        "CURRENT LOCATION: " + lockedLocation;
+
+
+      document.getElementById("status").innerText =
+        "Location locked.";
+
+
+      // Wait until the scanner's Enter event has completely finished,
+      // then place the cursor in Part Number.
+
+      setTimeout(function() {
+
+        document.getElementById("partNumber").focus();
+
+      }, 100);
+
+    } // end lockLocation()
+    // ============================================================
+// QUANTITY 10-KEY POPUP
+// ============================================================
+
+function showQuantityKeypad() {
+
+  document.getElementById("quantityPopup").style.display =
+    "flex";
+
+  updateQuantityDisplay();
+
+} // end showQuantityKeypad()
+
+
+function hideQuantityKeypad() {
+
+  document.getElementById("quantityPopup").style.display =
+    "none";
+
+} // end hideQuantityKeypad()
+
+
+function enterQuantity(number) {
+
+  const quantity =
+    document.getElementById("quantity");
+
+  quantity.value =
+    quantity.value + number;
+
+  updateQuantityDisplay();
+
+} // end enterQuantity()
+
+
+function backspaceQuantity() {
+
+  const quantity =
+    document.getElementById("quantity");
+
+  quantity.value =
+    quantity.value.slice(0, -1);
+
+  updateQuantityDisplay();
+
+} // end backspaceQuantity()
+
+
+function clearQuantity() {
+
+  document.getElementById("quantity").value =
+    "";
+
+  updateQuantityDisplay();
+
+} // end clearQuantity()
+
+
+function updateQuantityDisplay() {
+
+  const quantity =
+    document.getElementById("quantity").value;
+
+  document.getElementById("quantityDisplay").innerText =
+    quantity || "0";
+
+} // end updateQuantityDisplay()
+
+
+function submitQuantity() {
+
+  const quantity =
+    document.getElementById("quantity").value;
+
+  if (!quantity || Number(quantity) <= 0) {
+
+    document.getElementById("status").innerText =
+      "Enter a valid quantity.";
+
+    return;
+
+  } // end quantity check
+
+  hideQuantityKeypad();
+
+  testAdd();
+
+} // end submitQuantity()
+
+// ============================================================
+// ADD INVENTORY
+// Saves one transaction locally; does not contact Google Sheets.
+// After saving, Location stays locked while Part and Quantity clear.
+// ============================================================
+
+
+/* ============================================================
+   OFFLINE ADD INVENTORY
+   Saves locally. Does NOT contact Google Sheets.
+   ============================================================ */
+
+function testAdd() {
+
+  const partNumber =
+    document.getElementById("partNumber").value.trim().toUpperCase();
+
+  const quantity =
+    Number(document.getElementById("quantity").value);
+
+  const status =
+    document.getElementById("status");
+
+  // Validate the transaction.
+
+  if (!lockedLocation) {
+    status.innerText = "Choose a location first.";
+    return;
+  }
+
+  if (!partNumber) {
+    status.innerText = "Scan or enter a part number.";
+    return;
+  }
+
+  if (!Number.isSafeInteger(quantity) || quantity <= 0) {
+    status.innerText = "Enter a valid whole-number quantity.";
+    return;
+  }
+
+  // Read the existing local queue.
+
+  const storageKey = "rapidAddOfflineQueueV1";
+
+  let queue;
+
+  try {
+    const saved = localStorage.getItem(storageKey);
+    queue = saved === null ? [] : JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Stored queue is invalid.");
+    }
+
+    if (!crypto.randomUUID) {
+      throw new Error("This browser cannot generate transaction IDs.");
+    }
+
+    // Create one uniquely identified transaction.
+
+    const transaction = {
+      id: crypto.randomUUID(),
+      action: "ADD",
+      partNumber: partNumber,
+      location: lockedLocation,
+      quantity: quantity,
+      createdAt: new Date().toISOString(),
+      status: "PENDING"
+    };
+
+    queue.push(transaction);
+
+    // Save the updated queue on this device.
+
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify(queue)
+    );
+
+  } catch (error) {
+
+    status.innerText =
+      "LOCAL SAVE FAILED\n" +
+      error.message +
+      "\nDo not scan this box again until resolved.";
+
+    return;
+  }
+
+  // Saved successfully. Clear only Part and Quantity.
+
+  document.getElementById("partNumber").value = "";
+  document.getElementById("quantity").value = "";
+
+  status.innerText =
+    "SAVED OFFLINE\n" +
+    "Location: " + lockedLocation + "\n" +
+    "Part: " + partNumber + "\n" +
+    "Quantity: " + quantity + "\n" +
+    "Pending transactions: " +
+      queue.filter(function(item) { return item.status === "PENDING"; }).length;
+
+  document.getElementById("partNumber").focus();
+
+} // end testAdd()
+
+
+    // ============================================================
+    // CHANGE LOCATION
+    // ============================================================
+
+    function changeLocation() {
+
+      lockedLocation = "";
+
+
+      document.getElementById("location").disabled =
+        false;
+
+
+      document.getElementById("location").value = "";
+
+
+      document.getElementById("partNumber").value = "";
+
+
+      document.getElementById("quantity").value = "";
+
+
+      document.getElementById("locationBanner").innerText =
+        "NO LOCATION SELECTED";
+
+
+      document.getElementById("status").innerText =
+        "Ready for a new location.";
+
+
+      document.getElementById("location").focus();
+
+    } // end changeLocation()
+    // ============================================================
+    // INITIAL PAGE FOCUS
+    // Start Rapid Add ready for a Location scan.
+    // ============================================================
+
+    window.addEventListener("load", function() {
+
+  showPendingCount();
+
+  document.getElementById("location").focus();
+
+}); // end page load
+    
+  </script>
+</body>
+</html>
+
       margin: auto;
       padding: 20px;
     }
