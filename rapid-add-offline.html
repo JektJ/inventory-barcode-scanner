@@ -981,7 +981,31 @@ function showSyncConfirmationInstructions() {
     // INITIAL PAGE FOCUS
     // Start Rapid Add ready for a Location scan.
     // ============================================================
+    // ============================================================
+// TEST CONFIRMATION MESSAGE RECEIVER
+// Does not modify inventory or local transactions.
+// ============================================================
 
+window.addEventListener("message", function(event) {
+
+  // Accept messages only from our own GitHub Pages site.
+  if (event.origin !== window.location.origin) {
+    return;
+  }
+
+  const data = event.data;
+
+  if (!data || data.type !== "OFFLINE_SYNC_TEST") {
+    return;
+  }
+
+  document.getElementById("status").innerText =
+    "CONFIRMATION MESSAGE RECEIVED\n" +
+    "Transaction: " + String(data.transactionId) + "\n" +
+    "Status: " + String(data.status) + "\n" +
+    "Local queue unchanged.";
+
+});
     window.addEventListener("load", function() {
 
   showPendingCount();
