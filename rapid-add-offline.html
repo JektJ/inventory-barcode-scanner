@@ -243,6 +243,13 @@ html,body,#root{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grays
 <button type="button" onclick="exportPendingBackup()">
   EXPORT BACKUP
 </button>
+  <!-- TEST SYNC: EXISTING PENDING QUEUE -->
+<button
+  type="button"
+  id="queueSyncTestButton"
+  onclick="syncPendingTest()">
+  TEST SYNC PENDING
+</button>
 <button type="button" onclick="testSyncConnection()">TEST SYNC CONNECTION (FAKE DATA ONLY)</button>
 <div id="pendingViewer" style="display: none;">
 
@@ -754,7 +761,103 @@ function testAdd() {
   document.getElementById("partNumber").focus();
 
 } // end testAdd()
+// ============================================================
+// TEST SYNC - ONE EXISTING OFFLINE TRANSACTION
+// Test inventory ONLY. Does not modify the local queue.
+// ============================================================
 
+let queueTestSyncRunning = false;
+
+async function syncPendingTest() {
+
+  const status = document.getElementById("status");
+  const button = document.getElementById("queueSyncTestButton");
+
+  if (queueTestSyncRunning) return;
+
+  try {
+
+    const saved =
+      localStorage.getItem("rapidAddOfflineQueueV1");
+
+    const queue =
+      saved === null ? [] : JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Invalid offline queue.");
+    }
+
+    // Only allow our known test transaction.
+    const matches = queue.filter(function(item) {
+      return item.partNumber === "OFFLINE-TEST-001" &&
+             item.location === "TEST" &&
+             item.quantity === 1 &&
+             item.action === "ADD" &&
+             item.status === "PENDING" &&
+             typeof item.id === "string" &&
+             item.id.length > 0;
+    });
+
+    if (matches.length !== 1) {
+      throw new Error(
+        "Expected exactly one matching test transaction. Found: " +
+        matches.length
+      );
+    }
+
+    const transaction = matches[0];
+
+    const endpoint =
+      "https://script.google.com/macros/s/" +
+      "AKfycbzzF0rS6uQhpQ1KE-wgI6mHj0aK3yRPs-UNWOPEoBp0IyOMi30TA-bY2IkkIqnTEJGz" +
+      "/exec";
+
+    const params = new URLSearchParams({
+      action: "offlineTestAdd",
+      transactionId: transaction.id,
+      partNumber: transaction.partNumber,
+      location: transaction.location,
+      quantity: String(transaction.quantity),
+      createdAt: transaction.createdAt || ""
+    });
+
+    const url = endpoint + "?" + params.toString();
+
+    queueTestSyncRunning = true;
+    button.disabled = true;
+
+    status.innerText =
+      "TEST SYNC IN PROGRESS\nDo not close this page.";
+
+    // Navigate to the server response in a separate tab.
+    // The original page and local queue remain unchanged.
+    const responseTab = window.open(url, "_blank");
+
+    if (!responseTab) {
+      throw new Error(
+        "Browser blocked the test response tab."
+      );
+    }
+
+    status.innerText =
+      "TEST SYNC REQUESTED\n" +
+      "Check the response in the new tab.\n" +
+      "Your pending queue has NOT been changed.";
+
+  } catch (error) {
+
+    status.innerText =
+      "TEST SYNC NOT COMPLETED\n" +
+      error.message;
+
+  } finally {
+
+    queueTestSyncRunning = false;
+    button.disabled = false;
+
+  }
+
+} // end syncPendingTest()
 
 
     // ============================================================
