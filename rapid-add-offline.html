@@ -865,6 +865,42 @@ async function syncPendingTest() {
   }
 
 } // end syncPendingTest()
+    // ============================================================
+// OFFLINE TRANSACTION STATUS VERIFICATION
+// ============================================================
+
+function getPendingTestTransaction() {
+
+  const saved =
+    localStorage.getItem("rapidAddOfflineQueueV1");
+
+  const queue =
+    saved === null ? [] : JSON.parse(saved);
+
+  if (!Array.isArray(queue)) {
+    throw new Error("Invalid offline queue.");
+  }
+
+  const matches = queue.filter(function(item) {
+    return item.id ===
+      "cdeaf090-fb00-4e9a-b2fe-2a9fc1e72895" &&
+      item.partNumber === "OFFLINE-TEST-001" &&
+      item.location === "TEST" &&
+      item.quantity === 1 &&
+      item.action === "ADD" &&
+      item.status === "PENDING";
+  });
+
+  if (matches.length !== 1) {
+    throw new Error(
+      "Expected one matching pending test transaction. Found: " +
+      matches.length
+    );
+  }
+
+  return matches[0];
+
+} // end getPendingTestTransaction()
 function showSyncConfirmationInstructions() {
   document.getElementById("status").innerText =
     "SYNC CONFIRMATION\n" +
