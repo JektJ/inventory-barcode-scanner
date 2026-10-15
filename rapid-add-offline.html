@@ -250,6 +250,11 @@ html,body,#root{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grays
   onclick="syncPendingTest()">
   TEST SYNC PENDING
 </button>
+  <button
+  type="button"
+  onclick="showSyncConfirmationInstructions()">
+  CHECK SYNC CONFIRMATION
+</button>
 <button type="button" onclick="testSyncConnection()">TEST SYNC CONNECTION (FAKE DATA ONLY)</button>
 <div id="pendingViewer" style="display: none;">
 
@@ -860,7 +865,13 @@ async function syncPendingTest() {
   }
 
 } // end syncPendingTest()
-
+function showSyncConfirmationInstructions() {
+  document.getElementById("status").innerText =
+    "SYNC CONFIRMATION\n" +
+    "Check OfflineSync in Google Sheets.\n" +
+    "Verify the exact transaction ID is COMPLETED.\n" +
+    "No local transaction status has been changed.";
+}
 
     // ============================================================
     // CHANGE LOCATION
