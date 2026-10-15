@@ -262,7 +262,9 @@
 <button type="button" onclick="togglePendingTransactions()">
   VIEW PENDING
 </button>
-
+<button type="button" onclick="exportPendingBackup()">
+  EXPORT BACKUP
+</button>
 <div id="pendingViewer" style="display: none;">
 
   <h2>Pending Transactions</h2>
@@ -414,6 +416,81 @@ function showPendingTransactions() {
   }
 
 } // end showPendingTransactions()
+
+/* ============================================================
+   EXPORT OFFLINE TRANSACTION BACKUP
+   ============================================================ */
+
+function exportPendingBackup() {
+
+  const status =
+    document.getElementById("status");
+
+  try {
+
+    const saved =
+      localStorage.getItem("rapidAddOfflineQueueV1");
+
+    if (saved === null) {
+      status.innerText = "No transactions to back up.";
+      return;
+    }
+
+    const queue = JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Invalid offline queue.");
+    }
+
+    if (queue.length === 0) {
+      status.innerText = "No transactions to back up.";
+      return;
+    }
+
+    // Preserve the exact stored transactions and their IDs.
+    const backup = {
+      format: "RapidAddOfflineBackupV1",
+      exportedAt: new Date().toISOString(),
+      transactions: queue
+    };
+
+    const blob = new Blob(
+      [JSON.stringify(backup, null, 2)],
+      { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+
+    link.download =
+      "rapid-add-backup-" +
+      new Date().toISOString().replace(/[:.]/g, "-") +
+      ".json";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // Allow the browser time to initiate the download.
+    setTimeout(function() {
+      URL.revokeObjectURL(url);
+    }, 60000);
+
+    status.innerText =
+      "BACKUP DOWNLOAD REQUESTED\n" +
+      "Transactions: " + queue.length +
+      "\nVerify the file was saved before relying on it.";
+
+  } catch (error) {
+
+    status.innerText =
+      "BACKUP FAILED\n" + error.message;
+
+  }
+
+} // end exportPendingBackup()
 
 
     // ============================================================
