@@ -376,16 +376,17 @@ function showPendingTransactions() {
       throw new Error("Invalid offline queue.");
     }
 
-    if (queue.length === 0) {
+    // Cancelled scans are retained for audit/backup but hidden from the active list.
+    const visibleQueue = queue.filter(function(t) {
+      return t.status !== "CANCELLED";
+    });
 
-      list.innerText =
-        "No pending transactions.";
-
+    if (visibleQueue.length === 0) {
+      list.innerText = "No active transactions.";
       return;
-
     }
 
-    queue.forEach(function(transaction, index) {
+    visibleQueue.forEach(function(transaction, index) {
 
       const item =
         document.createElement("div");
@@ -419,6 +420,20 @@ function showPendingTransactions() {
       item.style.whiteSpace =
         "pre-line";
 
+      // Only pending scans may be cancelled. Use the unique transaction ID,
+      // never the part number or display position.
+      if (transaction.status === "PENDING" && typeof transaction.id === "string") {
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.textContent = "REMOVE THIS PENDING SCAN";
+        removeButton.style.backgroundColor = "#8b2020";
+        removeButton.style.color = "#ffffff";
+        removeButton.onclick = function() {
+          cancelPendingTransaction(transaction.id);
+        };
+        item.appendChild(removeButton);
+      }
+
       list.appendChild(item);
       list.style.display = "block";
       list.style.visibility = "visible";
@@ -434,6 +449,56 @@ function showPendingTransactions() {
   }
 
 } // end showPendingTransactions()
+
+/* ============================================================
+   CANCEL ONE PENDING SCAN
+   Keep original data for backup/audit; never affect Google Sheets.
+   ============================================================ */
+function cancelPendingTransaction(transactionId) {
+  const key = "rapidAddOfflineQueueV1";
+  const status = document.getElementById("status");
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved === null) throw new Error("Offline queue missing.");
+    const queue = JSON.parse(saved);
+    if (!Array.isArray(queue)) throw new Error("Invalid offline queue.");
+
+    const matches = queue.filter(function(t) { return t.id === transactionId; });
+    if (matches.length !== 1 || matches[0].status !== "PENDING") {
+      throw new Error("This scan is no longer uniquely pending. Nothing changed.");
+    }
+    const t = matches[0];
+    const approved = window.confirm(
+      "REMOVE THIS PENDING SCAN?\n\n" +
+      "Part: " + t.partNumber + "\n" +
+      "Location: " + t.location + "\n" +
+      "Quantity: " + t.quantity + "\n\n" +
+      "This cancels only this scan. It will NOT change Google Sheets."
+    );
+    if (!approved) return;
+
+    // Re-read after confirmation; reject if the record changed meanwhile.
+    const latest = JSON.parse(localStorage.getItem(key));
+    if (!Array.isArray(latest)) throw new Error("Invalid offline queue.");
+    const latestMatches = latest.filter(function(x) { return x.id === transactionId; });
+    if (latestMatches.length !== 1 || latestMatches[0].status !== "PENDING" ||
+        latestMatches[0].partNumber !== t.partNumber ||
+        latestMatches[0].location !== t.location ||
+        latestMatches[0].quantity !== t.quantity) {
+      throw new Error("Scan changed during confirmation. Nothing changed.");
+    }
+    const updated = latest.map(function(x) {
+      return x.id === transactionId
+        ? Object.assign({}, x, {status: "CANCELLED", cancelledAt: new Date().toISOString()})
+        : x;
+    });
+    localStorage.setItem(key, JSON.stringify(updated));
+    showPendingCount();
+    showPendingTransactions();
+  } catch (error) {
+    status.innerText = "REMOVE FAILED\n" + error.message;
+  }
+}
 
 /* ============================================================
    EXPORT OFFLINE TRANSACTION BACKUP
