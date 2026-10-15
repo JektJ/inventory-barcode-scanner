@@ -255,7 +255,21 @@
   <button onclick="changeLocation()">
     CHANGE LOCATION
   </button>
+  <!-- ========================================================
+     OFFLINE TRANSACTION VIEWER
+     ======================================================== -->
 
+<button type="button" onclick="togglePendingTransactions()">
+  VIEW PENDING
+</button>
+
+<div id="pendingViewer" style="display: none;">
+
+  <h2>Pending Transactions</h2>
+
+  <div id="pendingList"></div>
+
+</div>
 
   <div id="status"></div>
 
@@ -301,6 +315,106 @@ function showPendingCount() {
   }
 
 } // end showPendingCount()
+
+/* ============================================================
+   VIEW PENDING TRANSACTIONS
+   ============================================================ */
+
+function togglePendingTransactions() {
+
+  const viewer =
+    document.getElementById("pendingViewer");
+
+  if (viewer.style.display === "none") {
+
+    showPendingTransactions();
+
+    viewer.style.display = "block";
+
+  } else {
+
+    viewer.style.display = "none";
+
+  }
+
+} // end togglePendingTransactions()
+
+
+function showPendingTransactions() {
+
+  const list =
+    document.getElementById("pendingList");
+
+  // Clear the previous display.
+  list.replaceChildren();
+
+  try {
+
+    const saved =
+      localStorage.getItem("rapidAddOfflineQueueV1");
+
+    const queue =
+      saved === null ? [] : JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Invalid offline queue.");
+    }
+
+    if (queue.length === 0) {
+
+      list.innerText =
+        "No pending transactions.";
+
+      return;
+
+    }
+
+    queue.forEach(function(transaction, index) {
+
+      const item =
+        document.createElement("div");
+
+      item.style.border =
+        "1px solid #aaa";
+
+      item.style.borderRadius =
+        "8px";
+
+      item.style.padding =
+        "12px";
+
+      item.style.marginBottom =
+        "10px";
+
+      item.style.background =
+        "#f5f5f5";
+
+      // Use textContent so scanned values are displayed
+      // as text rather than interpreted as HTML.
+      item.textContent =
+        (index + 1) + ". " +
+        transaction.partNumber + "\n" +
+        "Location: " + transaction.location + "\n" +
+        "Quantity: " + transaction.quantity + "\n" +
+        "Status: " + transaction.status;
+
+      item.style.whiteSpace =
+        "pre-line";
+
+      list.appendChild(item);
+
+    });
+
+  } catch (error) {
+
+    list.innerText =
+      "Unable to read pending transactions.\n" +
+      error.message;
+
+  }
+
+} // end showPendingTransactions()
+
 
     // ============================================================
     // LOCK LOCATION
