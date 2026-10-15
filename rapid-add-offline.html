@@ -435,7 +435,13 @@ function submitQuantity() {
 // After success, Location stays locked while Part and Quantity clear.
 // ============================================================
 
-async function testAdd() {
+
+/* ============================================================
+   OFFLINE ADD INVENTORY
+   Saves locally. Does NOT contact Google Sheets.
+   ============================================================ */
+
+function testAdd() {
 
   const partNumber =
     document.getElementById("partNumber").value.trim().toUpperCase();
@@ -443,176 +449,91 @@ async function testAdd() {
   const quantity =
     Number(document.getElementById("quantity").value);
 
+  const status =
+    document.getElementById("status");
 
-  // ----------------------------------------------------------
-  // VALIDATION
-  // ----------------------------------------------------------
+  // Validate the transaction.
 
   if (!lockedLocation) {
-
-    document.getElementById("status").innerText =
-      "Choose a location first.";
-
+    status.innerText = "Choose a location first.";
     return;
-
-  } // end location check
-
+  }
 
   if (!partNumber) {
-
-    document.getElementById("status").innerText =
-      "Scan or enter a part number.";
-
+    status.innerText = "Scan or enter a part number.";
     return;
+  }
 
-  } // end part number check
-
-
-  if (!quantity || quantity <= 0) {
-
-    document.getElementById("status").innerText =
-      "Enter a valid quantity.";
-
+  if (!Number.isSafeInteger(quantity) || quantity <= 0) {
+    status.innerText = "Enter a valid whole-number quantity.";
     return;
+  }
 
-  } // end quantity check
+  // Read the existing local queue.
 
+  const storageKey = "rapidAddOfflineQueueV1";
 
-  // ----------------------------------------------------------
-  // PREPARE TRANSACTION
-  // ----------------------------------------------------------
-
-  const addButton =
-    document.querySelector('button[onclick="testAdd()"]');
-
-
-  addButton.disabled = true;
-  addButton.innerText = "PROCESSING...";
-
-
-  document.getElementById("status").innerText =
-    "Adding inventory...";
-
-
-  // ----------------------------------------------------------
-  // BUILD APPS SCRIPT REQUEST
-  // ----------------------------------------------------------
-  const WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
-  
-  const webAppUrl =
-    "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
-
-
-  const url =
-    WEB_APP_URL +
-    "?action=add" +
-    "&partNumber=" + encodeURIComponent(partNumber) +
-    "&location=" + encodeURIComponent(lockedLocation) +
-    "&quantity=" + encodeURIComponent(quantity);
-
-
-  // ----------------------------------------------------------
-  // SEND TRANSACTION
-  // ----------------------------------------------------------
+  let queue;
 
   try {
+    const saved = localStorage.getItem(storageKey);
+    queue = saved === null ? [] : JSON.parse(saved);
 
-  // Send the ADD request to Apps Script.
+    if (!Array.isArray(queue)) {
+      throw new Error("Stored queue is invalid.");
+    }
 
-  const response =
-    await fetch(url);
+    if (!crypto.randomUUID) {
+      throw new Error("This browser cannot generate transaction IDs.");
+    }
 
+    // Create one uniquely identified transaction.
 
-  // Read the response as text first.
+    const transaction = {
+      id: crypto.randomUUID(),
+      action: "ADD",
+      partNumber: partNumber,
+      location: lockedLocation,
+      quantity: quantity,
+      createdAt: new Date().toISOString(),
+      status: "PENDING"
+    };
 
-  const responseText =
-    await response.text();
+    queue.push(transaction);
 
+    // Save the updated queue on this device.
 
-  // If Google returned HTML instead of JSON,
-  // show the response instead of trying to parse it.
-
-  if (responseText.trim().startsWith("<")) {
-
-      document.getElementById("status").innerText =
-        "DIAGNOSTIC RESPONSE\n\n" +
-        responseText.substring(0, 300);
-
-      return;
-
-    } // end HTML response check
-
-    // The response does not appear to be HTML.
-    // Now it is safe to parse it as JSON.
-
-    const result =
-      JSON.parse(responseText);
-
-
-    // --------------------------------------------------------
-    // SUCCESS
-    // --------------------------------------------------------
-
-    if (result.success) {
-
-      document.getElementById("status").innerText =
-        "ADD COMPLETE\n" +
-        "Location: " + lockedLocation + "\n" +
-        "Part: " + partNumber + "\n" +
-        "Quantity added: " + quantity + "\n" +
-        "Available now: " + result.quantity;
-
-
-      // Clear ONLY the completed part.
-      // The locked Location remains unchanged.
-
-      document.getElementById("partNumber").value = "";
-
-      document.getElementById("quantity").value = "";
-
-
-      // Prepare for the next box at this same location.
-
-      document.getElementById("partNumber").focus();
-
-    } else {
-
-      // ------------------------------------------------------
-      // APPS SCRIPT REPORTED AN ERROR
-      // ------------------------------------------------------
-
-      document.getElementById("status").innerText =
-        "ADD FAILED\n" +
-        result.message;
-
-    } // end success/failure check
-
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify(queue)
+    );
 
   } catch (error) {
 
-    // --------------------------------------------------------
-    // CONNECTION / RESPONSE ERROR
-    // --------------------------------------------------------
+    status.innerText =
+      "LOCAL SAVE FAILED\n" +
+      error.message +
+      "\nDo not scan this box again until resolved.";
 
-    document.getElementById("status").innerText =
-      "CONNECTION ERROR\n" +
-      error.message;
+    return;
+  }
 
-  } finally {
+  // Saved successfully. Clear only Part and Quantity.
 
-    // --------------------------------------------------------
-    // ALWAYS RESTORE BUTTON
-    // --------------------------------------------------------
+  document.getElementById("partNumber").value = "";
+  document.getElementById("quantity").value = "";
 
-    addButton.disabled = false;
+  status.innerText =
+    "SAVED OFFLINE\n" +
+    "Location: " + lockedLocation + "\n" +
+    "Part: " + partNumber + "\n" +
+    "Quantity: " + quantity + "\n" +
+    "Pending transactions: " + queue.length;
 
-    addButton.innerText =
-      "ADD INVENTORY";
-
-  } // end try/catch/finally
+  document.getElementById("partNumber").focus();
 
 } // end testAdd()
+
 
 
     // ============================================================
