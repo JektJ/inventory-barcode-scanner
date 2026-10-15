@@ -261,6 +261,12 @@ html,body,#root{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grays
   onclick="window.open('sync-message-test.html', '_blank')">
   TEST COMMUNICATION
 </button>
+  <!-- MANUAL SYNC CONFIRMATION -->
+<button
+  type="button"
+  onclick="prepareManualSyncConfirmation()">
+  MANUAL SYNC CONFIRMATION
+</button>
 <button type="button" onclick="testSyncConnection()">TEST SYNC CONNECTION (FAKE DATA ONLY)</button>
 <div id="pendingViewer" style="display: none;">
 
@@ -874,7 +880,32 @@ async function syncPendingTest() {
     // ============================================================
 // OFFLINE TRANSACTION STATUS VERIFICATION
 // ============================================================
+// ============================================================
+// MANUAL SYNC CONFIRMATION - PREPARATION ONLY
+// Does not modify inventory or the offline queue.
+// ============================================================
 
+function prepareManualSyncConfirmation() {
+  const status = document.getElementById("status");
+
+  try {
+    const transaction = getPendingTestTransaction();
+
+    status.innerText =
+      "MANUAL CONFIRMATION READY\n" +
+      "Part: " + transaction.partNumber + "\n" +
+      "Location: " + transaction.location + "\n" +
+      "Quantity: " + transaction.quantity + "\n" +
+      "Transaction ID: " + transaction.id + "\n\n" +
+      "Verify that Google Sheets reports COMPLETED.\n" +
+      "No local changes have been made.";
+
+  } catch (error) {
+    status.innerText =
+      "MANUAL CONFIRMATION NOT READY\n" +
+      error.message;
+  }
+}
 function getPendingTestTransaction() {
 
   const saved =
@@ -907,6 +938,7 @@ function getPendingTestTransaction() {
   return matches[0];
 
 } // end getPendingTestTransaction()
+    
 function showSyncConfirmationInstructions() {
 
   const status = document.getElementById("status");
