@@ -400,8 +400,10 @@ function showPendingTransactions() {
         transaction.partNumber + "\n" +
         "Location: " + transaction.location + "\n" +
         "Quantity: " + transaction.quantity + "\n" +
-        "Status: " + transaction.status;
-
+        "Status: " + transaction.status +
+          (transaction.status === "SYNCED"
+            ? "\nConfirmed by Google Sheets"
+            : "");
       item.style.whiteSpace =
         "pre-line";
 
