@@ -902,12 +902,47 @@ function getPendingTestTransaction() {
 
 } // end getPendingTestTransaction()
 function showSyncConfirmationInstructions() {
-  document.getElementById("status").innerText =
-    "SYNC CONFIRMATION\n" +
-    "Check OfflineSync in Google Sheets.\n" +
-    "Verify the exact transaction ID is COMPLETED.\n" +
-    "No local transaction status has been changed.";
-}
+
+  const status = document.getElementById("status");
+
+  try {
+
+    // Identify the exact transaction stored on this phone.
+    const transaction = getPendingTestTransaction();
+
+    const endpoint =
+      "https://script.google.com/macros/s/" +
+      "AKfycbzzF0rS6uQhpQ1KE-wgI6mHj0aK3yRPs-UNWOPEoBp0IyOMi30TA-bY2IkkIqnTEJGz" +
+      "/exec";
+
+    const params = new URLSearchParams({
+      action: "offlineSyncStatus",
+      transactionId: transaction.id
+    });
+
+    const responseTab = window.open(
+      endpoint + "?" + params.toString(),
+      "_blank"
+    );
+
+    if (!responseTab) {
+      throw new Error("Browser blocked the status tab.");
+    }
+
+    status.innerText =
+      "STATUS CHECK REQUESTED\n" +
+      "Read the server response in the new tab.\n" +
+      "Local transaction remains PENDING.";
+
+  } catch (error) {
+
+    status.innerText =
+      "STATUS CHECK FAILED\n" +
+      error.message;
+
+  }
+
+} // end showSyncConfirmationInstructions()
 
     // ============================================================
     // CHANGE LOCATION
