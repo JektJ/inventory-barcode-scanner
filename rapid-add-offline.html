@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <title>Rapid Inventory Add</title>
+
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    #locationBanner {
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      border: 3px solid #333;
+      border-radius: 8px;
+      background-color: #f2f2f2;
+    }
+
+    .field {
+      margin: 18px 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      font-size: 20px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      white-space: pre-line;
+    }
+  /* ============================================================
+   QUANTITY 10-KEY POPUP
+   ============================================================ */
+
+.quantity-popup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantity-keypad {
+  width: 90%;
+  max-width: 360px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.quantity-display {
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.keypad-grid button {
+  margin: 0;
+  padding: 18px;
+  font-size: 26px;
+}
+
+.keypad-add {
+  margin-top: 12px;
+  font-size: 22px;
+}
+  </style>
+
+</head>
+
+
+<body>
+
+  <h1>Rapid Inventory Add</h1>
+
+
+  <!-- ========================================================
+       CURRENT LOCATION
+       ======================================================== -->
+
+  <div id="locationBanner">
+    NO LOCATION SELECTED
+  </div>
+
+
+  <div class="field">
+
+    <label for="location">
+      Location
+    </label>
+
+    <input
+      type="text"
+      id="location"
+      placeholder="Scan or enter location"
+      oninput="this.value = this.value.toUpperCase()"
+      onkeydown="handleLocationEnter(event)">
+    
+    <button
+      tabindex="-1"
+      onclick="lockLocation()">
+      USE LOCATION
+    </button>
+
+  </div>
+
+
+  <!-- ========================================================
+       PART NUMBER
+       ======================================================== -->
+
+  <div class="field">
+
+    <label for="partNumber">
+      Part Number
+    </label>
+
+    <input
+      type="text"
+      id="partNumber"
+      placeholder="Scan or enter part number"
+      oninput="this.value = this.value.toUpperCase()">
+
+  </div>
+
+
+  <!-- ========================================================
+       QUANTITY
+       ======================================================== -->
+
+  <div class="field">
+
+    <label for="quantity">
+      Quantity
+    </label>
+
+    <input
+      type="number"
+      id="quantity"
+      min="1"
+      inputmode="none"
+      placeholder="Enter quantity"
+      readonly
+      onclick="showQuantityKeypad()">
+
+  </div>
+
+  <!-- ========================================================
+     QUANTITY 10-KEY POPUP
+     ======================================================== -->
+
+<div id="quantityPopup" class="quantity-popup">
+
+  <div class="quantity-keypad">
+
+    <div class="quantity-display">
+      Quantity:
+      <span id="quantityDisplay">0</span>
+    </div>
+
+    <div class="keypad-grid">
+
+      <button type="button" onclick="enterQuantity('1')">1</button>
+      <button type="button" onclick="enterQuantity('2')">2</button>
+      <button type="button" onclick="enterQuantity('3')">3</button>
+
+      <button type="button" onclick="enterQuantity('4')">4</button>
+      <button type="button" onclick="enterQuantity('5')">5</button>
+      <button type="button" onclick="enterQuantity('6')">6</button>
+
+      <button type="button" onclick="enterQuantity('7')">7</button>
+      <button type="button" onclick="enterQuantity('8')">8</button>
+      <button type="button" onclick="enterQuantity('9')">9</button>
+
+      <button type="button" onclick="clearQuantity()">CLR</button>
+      <button type="button" onclick="enterQuantity('0')">0</button>
+      <button type="button" onclick="backspaceQuantity()">⌫</button>
+
+    </div>
+
+    <button
+      type="button"
+      class="keypad-add"
+      onclick="submitQuantity()">
+      ADD INVENTORY
+    </button>
+
+    <button
+      type="button"
+      onclick="hideQuantityKeypad()">
+      CANCEL
+    </button>
+
+  </div>
+
+</div>
+
+  <button onclick="testAdd()">
+    ADD INVENTORY
+  </button>
+
+
+  <button onclick="changeLocation()">
+    CHANGE LOCATION
+  </button>
+
+
+  <div id="status"></div>
+
+
+  <script>
+
+    // ============================================================
+    // RAPID ADD WORKFLOW STATE
+    // ============================================================
+
+    let lockedLocation = "";
+
+
+    // ============================================================
+    // LOCK LOCATION
+    // ============================================================
+    
+    // ============================================================
+    // LOCATION SCAN-GUN ENTER
+    // The Bluetooth scanner sends CR / Enter after a scan.
+    // Treat Enter exactly like clicking USE LOCATION.
+    // ============================================================
+
+    function handleLocationEnter(event) {
+
+      if (event.key === "Enter") {
+
+        // Prevent the browser from treating Enter as a normal
+        // button press or moving focus somewhere unexpected.
+        event.preventDefault();
+
+
+        // Lock the scanned location and move focus to Part Number.
+        lockLocation();
+
+      } // end Enter key check
+
+    } // end handleLocationEnter()
+    
+    function lockLocation() {
+
+      const location =
+        document.getElementById("location").value.trim();
+
+      if (!location) {
+
+        document.getElementById("status").innerText =
+          "Scan or enter a location first.";
+
+        return;
+
+      } // end blank location check
+
+
+      lockedLocation =
+        location.toUpperCase();
+
+
+      document.getElementById("location").value =
+        lockedLocation;
+
+
+      document.getElementById("location").disabled =
+        true;
+
+
+      document.getElementById("locationBanner").innerText =
+        "CURRENT LOCATION: " + lockedLocation;
+
+
+      document.getElementById("status").innerText =
+        "Location locked.";
+
+
+      // Wait until the scanner's Enter event has completely finished,
+      // then place the cursor in Part Number.
+
+      setTimeout(function() {
+
+        document.getElementById("partNumber").focus();
+
+      }, 100);
+
+    } // end lockLocation()
+    // ============================================================
+// QUANTITY 10-KEY POPUP
+// ============================================================
+
+function showQuantityKeypad() {
+
+  document.getElementById("quantityPopup").style.display =
+    "flex";
+
+  updateQuantityDisplay();
+
+} // end showQuantityKeypad()
+
+
+function hideQuantityKeypad() {
+
+  document.getElementById("quantityPopup").style.display =
+    "none";
+
+} // end hideQuantityKeypad()
+
+
+function enterQuantity(number) {
+
+  const quantity =
+    document.getElementById("quantity");
+
+  quantity.value =
+    quantity.value + number;
+
+  updateQuantityDisplay();
+
+} // end enterQuantity()
+
+
+function backspaceQuantity() {
+
+  const quantity =
+    document.getElementById("quantity");
+
+  quantity.value =
+    quantity.value.slice(0, -1);
+
+  updateQuantityDisplay();
+
+} // end backspaceQuantity()
+
+
+function clearQuantity() {
+
+  document.getElementById("quantity").value =
+    "";
+
+  updateQuantityDisplay();
+
+} // end clearQuantity()
+
+
+function updateQuantityDisplay() {
+
+  const quantity =
+    document.getElementById("quantity").value;
+
+  document.getElementById("quantityDisplay").innerText =
+    quantity || "0";
+
+} // end updateQuantityDisplay()
+
+
+function submitQuantity() {
+
+  const quantity =
+    document.getElementById("quantity").value;
+
+  if (!quantity || Number(quantity) <= 0) {
+
+    document.getElementById("status").innerText =
+      "Enter a valid quantity.";
+
+    return;
+
+  } // end quantity check
+
+  hideQuantityKeypad();
+
+  testAdd();
+
+} // end submitQuantity()
+
+// ============================================================
+// ADD INVENTORY
+// Sends one ADD transaction to the existing Apps Script backend.
+// After success, Location stays locked while Part and Quantity clear.
+// ============================================================
+
+async function testAdd() {
+
+  const partNumber =
+    document.getElementById("partNumber").value.trim().toUpperCase();
+
+  const quantity =
+    Number(document.getElementById("quantity").value);
+
+
+  // ----------------------------------------------------------
+  // VALIDATION
+  // ----------------------------------------------------------
+
+  if (!lockedLocation) {
+
+    document.getElementById("status").innerText =
+      "Choose a location first.";
+
+    return;
+
+  } // end location check
+
+
+  if (!partNumber) {
+
+    document.getElementById("status").innerText =
+      "Scan or enter a part number.";
+
+    return;
+
+  } // end part number check
+
+
+  if (!quantity || quantity <= 0) {
+
+    document.getElementById("status").innerText =
+      "Enter a valid quantity.";
+
+    return;
+
+  } // end quantity check
+
+
+  // ----------------------------------------------------------
+  // PREPARE TRANSACTION
+  // ----------------------------------------------------------
+
+  const addButton =
+    document.querySelector('button[onclick="testAdd()"]');
+
+
+  addButton.disabled = true;
+  addButton.innerText = "PROCESSING...";
+
+
+  document.getElementById("status").innerText =
+    "Adding inventory...";
+
+
+  // ----------------------------------------------------------
+  // BUILD APPS SCRIPT REQUEST
+  // ----------------------------------------------------------
+  const WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
+  
+  const webAppUrl =
+    "https://script.google.com/macros/s/AKfycbzP6fN39s_66P2x8tFlwf_p1IFFUJ383K8ugae5IZmlL_4fysgETXR7-27Ks0OMvM4I/exec";
+
+
+  const url =
+    WEB_APP_URL +
+    "?action=add" +
+    "&partNumber=" + encodeURIComponent(partNumber) +
+    "&location=" + encodeURIComponent(lockedLocation) +
+    "&quantity=" + encodeURIComponent(quantity);
+
+
+  // ----------------------------------------------------------
+  // SEND TRANSACTION
+  // ----------------------------------------------------------
+
+  try {
+
+  // Send the ADD request to Apps Script.
+
+  const response =
+    await fetch(url);
+
+
+  // Read the response as text first.
+
+  const responseText =
+    await response.text();
+
+
+  // If Google returned HTML instead of JSON,
+  // show the response instead of trying to parse it.
+
+  if (responseText.trim().startsWith("<")) {
+
+      document.getElementById("status").innerText =
+        "DIAGNOSTIC RESPONSE\n\n" +
+        responseText.substring(0, 300);
+
+      return;
+
+    } // end HTML response check
+
+    // The response does not appear to be HTML.
+    // Now it is safe to parse it as JSON.
+
+    const result =
+      JSON.parse(responseText);
+
+
+    // --------------------------------------------------------
+    // SUCCESS
+    // --------------------------------------------------------
+
+    if (result.success) {
+
+      document.getElementById("status").innerText =
+        "ADD COMPLETE\n" +
+        "Location: " + lockedLocation + "\n" +
+        "Part: " + partNumber + "\n" +
+        "Quantity added: " + quantity + "\n" +
+        "Available now: " + result.quantity;
+
+
+      // Clear ONLY the completed part.
+      // The locked Location remains unchanged.
+
+      document.getElementById("partNumber").value = "";
+
+      document.getElementById("quantity").value = "";
+
+
+      // Prepare for the next box at this same location.
+
+      document.getElementById("partNumber").focus();
+
+    } else {
+
+      // ------------------------------------------------------
+      // APPS SCRIPT REPORTED AN ERROR
+      // ------------------------------------------------------
+
+      document.getElementById("status").innerText =
+        "ADD FAILED\n" +
+        result.message;
+
+    } // end success/failure check
+
+
+  } catch (error) {
+
+    // --------------------------------------------------------
+    // CONNECTION / RESPONSE ERROR
+    // --------------------------------------------------------
+
+    document.getElementById("status").innerText =
+      "CONNECTION ERROR\n" +
+      error.message;
+
+  } finally {
+
+    // --------------------------------------------------------
+    // ALWAYS RESTORE BUTTON
+    // --------------------------------------------------------
+
+    addButton.disabled = false;
+
+    addButton.innerText =
+      "ADD INVENTORY";
+
+  } // end try/catch/finally
+
+} // end testAdd()
+
+
+    // ============================================================
+    // CHANGE LOCATION
+    // ============================================================
+
+    function changeLocation() {
+
+      lockedLocation = "";
+
+
+      document.getElementById("location").disabled =
+        false;
+
+
+      document.getElementById("location").value = "";
+
+
+      document.getElementById("partNumber").value = "";
+
+
+      document.getElementById("quantity").value = "";
+
+
+      document.getElementById("locationBanner").innerText =
+        "NO LOCATION SELECTED";
+
+
+      document.getElementById("status").innerText =
+        "Ready for a new location.";
+
+
+      document.getElementById("location").focus();
+
+    } // end changeLocation()
+    // ============================================================
+    // INITIAL PAGE FOCUS
+    // Start Rapid Add ready for a Location scan.
+    // ============================================================
+
+    window.addEventListener("load", function() {
+
+      document.getElementById("location").focus();
+
+}); // end page load
+    
+  </script>
+
+</body>
+
+</html>
