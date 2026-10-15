@@ -267,7 +267,40 @@
     // ============================================================
 
     let lockedLocation = "";
+    // ============================================================
+// OFFLINE QUEUE STATUS
+// ============================================================
 
+function showPendingCount() {
+
+  const status =
+    document.getElementById("status");
+
+  try {
+
+    const saved =
+      localStorage.getItem("rapidAddOfflineQueueV1");
+
+    const queue =
+      saved === null ? [] : JSON.parse(saved);
+
+    if (!Array.isArray(queue)) {
+      throw new Error("Invalid offline queue.");
+    }
+
+    status.innerText =
+      "OFFLINE MODE\n" +
+      "Pending transactions: " + queue.length;
+
+  } catch (error) {
+
+    status.innerText =
+      "QUEUE ERROR\n" +
+      error.message;
+
+  }
+
+} // end showPendingCount()
 
     // ============================================================
     // LOCK LOCATION
@@ -576,7 +609,9 @@ function testAdd() {
 
     window.addEventListener("load", function() {
 
-      document.getElementById("location").focus();
+  showPendingCount();
+
+  document.getElementById("location").focus();
 
 }); // end page load
     
